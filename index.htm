@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Manga Recommendations</title>
+    <style>
+      body {
+        background-color: #0b1622;
+        color: #9fadbd;
+        font-family: Roboto, -apple-system, BlinkMacSystemFont, Segoe UI, Oxygen, Ubuntu, Cantarell,
+          Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+      }
+      .even {
+        background-color: #151f2e;
+      }
+      img {
+        border-radius: 4px;
+        margin-left: 3px;
+      }
+      .cover,
+      .recs {
+        border-width: 1px 0;
+        display: flex;
+        flex-flow: wrap;
+        justify-content: space-evenly;
+      }
+      .container {
+        width: 80%;
+        position: absolute;
+        left: 10%;
+        text-align: center;
+      }
+      .settings {
+        display: flex;
+        flex-flow: wrap;
+        justify-content: space-evenly;
+        margin: 0.5em;
+        text-align: center;
+      }
+      .cover {
+        grid-area: cover;
+      }
+      .recs {
+        grid-area: sources;
+      }
+      .title {
+        grid-area: title;
+      }
+      .details {
+        grid-area: details;
+      }
+      .entry {
+        display: grid;
+        grid-template-areas: 'cover title details' 'sources title details';
+        grid-template-columns: 300px 1fr 1fr;
+        grid-template-rows: repeat(2, auto);
+        /* column-gap: 10px; */
+        /* row-gap: 3px; */
+        margin-bottom: 1em;
+        padding: 5px;
+        border-radius: 10px;
+      }
+      .entry > div {
+        padding: 1.5px 0.5em;
+        /* border-left: 2px solid; */
+      }
+      .title > div,
+      .details > div {
+        margin: 0;
+        position: relative;
+        text-align: justify;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .details > div {
+        display: inline-flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        gap: 20px;
+      }
+      .title h3 {
+        font-weight: 400;
+      }
+      .title > div > p,
+      .details > div > p {
+        margin: 0;
+      }
+      .tag {
+        border-radius: 10px;
+        background-color: #d3e7f3;
+        display: inline-block;
+        margin: 0.25em;
+        padding: 0.25em;
+        color: #1b4964;
+      }
+      .entry.header > div {
+        border: 0 none;
+        text-align: center;
+      }
+    </style>
+    <link
+      rel="preload"
+      as="style"
+      type="text/css"
+      onload="this.onload=null;this.rel='stylesheet'"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <span class="settings">
+        <span
+          ><input id="username" placeholder="AniList Username" /><button onclick="fetchData()">
+            OK
+          </button></span
+        >
+        <span>
+          <label for="adult">NSFW</label>
+          <select id="adult" onchange="parseData(data)">
+            <option>Only</option>
+            <option>None</option>
+            <option selected="true">Both</option>
+          </select>
+        </span>
+        <span>
+          <input type="checkbox" checked="true" id="subRecs" onchange="parseData(data)" />
+          <label for="subRecs">Sub-Recomendations</label>
+        </span>
+        <span>
+          <input type="checkbox" checked="true" id="englishTitles" onchange="parseData(data)" />
+          <label for="englishTitles">Prefer English Titles</label>
+        </span>
+      </span>
+      <div class="entry even header">
+        <div>Cover</div>
+        <div>Title</div>
+        <div>Description</div>
+        <div>Recommended From</div>
+        <div>Alt. Title</div>
+        <div>Tags</div>
+      </div>
+      <div class="content">
+        <noscript><h1>This page requires JavaScript</h1></noscript>
+      </div>
+      <script>
+        const table = document.querySelector('.content');
+        let data = {};
+        let recs,
+          ignore = [];
+        // fetchData();
+        function fetchData() {
+          table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
+          // fetch('mangarecs.json')
+          fetch('https://graphql.anilist.co', {
+            method: 'post',
+            mode: 'cors',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              'Cache-Control': 'max-stale=36000, only-if-cached, private',
+            },
+            body: JSON.stringify({
+              query:
+                'query($user:String){collection:MediaListCollection(userName:$user,type:MANGA,perChunk:500,chunk:1,status_in:[CURRENT,COMPLETED],forceSingleCompletedList:true,sort:UPDATED_TIME_DESC){hasNextChunk statuses:lists{status name list:entries{manga:media{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult}}}}}}}}}}}',
+              variables: { user: document.querySelector('#username').value },
+            }),
+          })
+            .then(response => response.json())
+            .then(response => {
+              data = response.data;
+              parseData(data);
+            })
+            .catch(e => window.alert(`Oops: ${e}`));
+        }
+
+        function parseRecs(manga) {
+          manga.recommendations.entries.forEach(entry => {
+            const rec = entry.mediaRecommendation;
+            if (
+              !rec ||
+              ignore.includes(rec.id) ||
+              rec.isAdult == document.querySelector('#adult').selectedIndex ||
+              rec.countryOfOrigin != 'JP'
+              // || e.rating < 1
+            )
+              return;
+            if (recs.find(e => e.id == rec.id)) {
+              const index = recs.findIndex(e => e.id == rec.id);
+              recs[index].recommended.push({
+                cover: manga.cover.medium || manga.cover.large,
+                title: manga.title.english || manga.title.romaji,
+                url: manga.url,
+              });
+              return;
+            } else {
+              rec.recommended = [
+                {
+                  cover: manga.cover.medium || manga.cover.large,
+                  title: manga.title.english || manga.title.romaji,
+                  url: manga.url,
+                },
+              ];
+              recs.push(rec);
+              if (rec.recommendations && document.querySelector('#subRecs').checked) {
+                parseRecs(rec);
+              }
+            }
+          });
+        }
+
+        function parseData(data, adult = false) {
+          console.log('Parsing...');
+          const englishTitles = document.querySelector('#englishTitles').checked;
+          table.innerHTML = '';
+          const completed = data.collection.statuses
+            .find(s => s.status == 'COMPLETED')
+            .list.map(entry => entry.manga);
+          const current = data.collection.statuses
+            .find(s => s.status == 'CURRENT')
+            .list.map(e => e.manga);
+          ignore = [...completed.map(m => m.id), ...current.map(m => m.id)];
+          recs = [];
+
+          console.log('Currents...');
+          current.forEach(manga => parseRecs(manga));
+          console.log('Currents DONE');
+
+          let even = false;
+          recs
+            // .sort((a, b) => b.recommended.length - a.recommended.length)
+            .forEach(rec => {
+              const entry = document.createElement('div');
+              const cell = document.createElement('div');
+              const text = document.createElement('p');
+
+              const link = document.createElement('a');
+              const img = document.createElement('img');
+
+              entry.classList.add('entry');
+              if (even) entry.classList.add('even');
+
+              // COVER + URL
+              link.target = '_blank';
+              link.href = rec.url;
+
+              img.width = 250;
+              img.loading = 'lazy';
+              img.src = rec.cover.large;
+              img.id = rec.id;
+
+              link.appendChild(img.cloneNode(true));
+              cell.appendChild(link.cloneNode(true));
+              cell.classList.add('cover');
+              entry.appendChild(cell.cloneNode(true));
+              cell.removeAttribute('class');
+
+              // CONNECTIONS
+              cell.innerHTML = '';
+              cell.classList.add('recs');
+              img.width = 75;
+              rec.recommended.forEach(origin => {
+                link.innerHTML = '';
+                link.target = '_blank';
+                link.href = origin.url;
+                img.src = origin.cover;
+                img.title = origin.title;
+                img.alt = origin.title;
+                link.appendChild(img.cloneNode(true));
+                cell.appendChild(link.cloneNode(true));
+              });
+              entry.appendChild(cell.cloneNode(true));
+              cell.removeAttribute('class');
+
+              // TITLE
+              cell.innerHTML = '';
+              const textContainer = document.createElement('div');
+              const header = document.createElement('h3');
+              const title = englishTitles
+                ? rec.title.english || rec.title.romaji
+                : rec.title.romaji;
+              header.textContent = rec.isAdult ? `🔞 ${title}` : title;
+              textContainer.appendChild(header.cloneNode(true));
+
+              text.innerText =
+                '• ' +
+                [
+                  ...new Set([
+                    rec.title.english,
+                    rec.title.romaji,
+                    ...rec.synonyms,
+                    rec.title.native,
+                  ]),
+                ]
+                  .filter(i => (i && i != title ? i : false))
+                  .join('\n• ');
+              textContainer.appendChild(text.cloneNode(true));
+              cell.appendChild(textContainer.cloneNode(true));
+
+              cell.classList.add('title');
+              entry.appendChild(cell.cloneNode(true));
+              cell.removeAttribute('class');
+
+              // DESCRIPTION
+              cell.innerHTML = '';
+              textContainer.innerHTML = '';
+              text.innerHTML = rec.description || '&lt;Empty Description&gt;';
+              textContainer.appendChild(text.cloneNode(true));
+
+              text.innerHTML = '';
+              rec.tags
+                ?.filter(tag => !tag.isMediaSpoiler)
+                .map(tag => tag.name)
+                .forEach(tag => {
+                  const container = document.createElement('div');
+                  container.append(tag);
+                  container.className = 'tag';
+                  text.appendChild(container);
+                });
+              textContainer.appendChild(text.cloneNode(true));
+
+              cell.appendChild(textContainer.cloneNode(true));
+              cell.classList.add('details');
+              entry.appendChild(cell.cloneNode(true));
+              cell.removeAttribute('class');
+
+              table.appendChild(entry.cloneNode(true));
+              even = !even;
+            });
+          console.log('Parsed!');
+        }
+      </script>
+    </div>
+  </body>
+</html>
