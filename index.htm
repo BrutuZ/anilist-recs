@@ -82,12 +82,14 @@
         font-family: Roboto, -apple-system, BlinkMacSystemFont, Segoe UI, Oxygen, Ubuntu, Cantarell,
           Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
       }
-      .even {
+      div.entry.filtered {
+        display: none !important;
+      }
+      div.entry:not(.filtered):nth-child(even) {
         background-color: #151f2e;
       }
       img {
-        border-radius: 4px;
-        margin-left: 3px;
+        border-radius: 3%;
       }
       .cover,
       .recs {
@@ -163,6 +165,10 @@
         margin: 0.25em;
         padding: 0.25em;
         color: #1b4964;
+        cursor: pointer;
+      }
+      .tag.filtered {
+        background-color: #81f066;
       }
       .header {
         border: 0 none;
@@ -224,7 +230,7 @@
       // fetchData();
       async function fetchData() {
         table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
-        // fetch('mangarecs.json')
+        // const response = await fetch('./mangarecs.json');
         const response = await fetch('https://graphql.anilist.co', {
           method: 'post',
           mode: 'cors',
@@ -305,7 +311,6 @@
         current.forEach(manga => parseRecs(manga));
         console.log('Currents DONE');
 
-        let even = false;
         recs
           // .sort((a, b) => b.recommended.length - a.recommended.length)
           .forEach(rec => {
@@ -317,7 +322,7 @@
             const img = document.createElement('img');
 
             entry.classList.add('entry');
-            if (even) entry.classList.add('even');
+            entry.id = rec.id;
 
             // COVER + URL
             link.target = '_blank';
@@ -326,7 +331,6 @@
             img.width = 250;
             img.loading = 'lazy';
             img.src = rec.cover.large;
-            img.id = rec.id;
 
             link.appendChild(img.cloneNode(true));
             cell.appendChild(link.cloneNode(true));
@@ -377,7 +381,7 @@
             // DESCRIPTION
             cell.innerHTML = '';
             textContainer.innerHTML = '';
-            text.innerHTML = rec.description || '&lt;Empty Description&gt;';
+            text.innerHTML = rec.description || '<i>&lt;Empty Description&gt;</i>';
             textContainer.appendChild(text.cloneNode(true));
 
             text.innerHTML = '';
@@ -388,9 +392,10 @@
                 const container = document.createElement('div');
                 container.append(tag);
                 container.className = 'tag';
+                container.dataset.tag = tag;
                 text.appendChild(container);
               });
-            textContainer.appendChild(text.cloneNode(true));
+            if (text.innerHTML) textContainer.appendChild(text.cloneNode(true));
 
             cell.appendChild(textContainer.cloneNode(true));
             cell.classList.add('details');
@@ -398,9 +403,23 @@
             cell.removeAttribute('class');
 
             table.appendChild(entry.cloneNode(true));
-            even = !even;
           });
+        document
+          .querySelectorAll('.tag')
+          .forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
         console.log('Parsed!');
+      }
+
+      function filterTag(ev) {
+        ev.preventDefault();
+        document
+          .querySelectorAll(`div.entry:not(.header, :has([data-tag="${this.dataset.tag}"])`)
+          .forEach(entry => {
+            entry.classList.toggle('filtered');
+          });
+        document.querySelectorAll(`[data-tag="${this.dataset.tag}"]`).forEach(tag => {
+          tag.classList.toggle('filtered');
+        });
       }
 
       document.addEventListener('DOMContentLoaded', () => {
