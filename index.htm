@@ -184,23 +184,25 @@
     <div class="container">
       <span class="settings">
         <span>
-          <input id="username" placeholder="AniList Username" />
-          <button onclick="fetchData()">OK</button>
+          <form id="login">
+            <input id="username" placeholder="AniList Username" />
+            <button type="submit">OK</button>
+          </form>
         </span>
         <span>
           <label for="adult">NSFW</label>
-          <select id="adult" onchange="parseData(data)">
+          <select id="adult">
             <option>Only</option>
             <option>None</option>
             <option selected="true">Both</option>
           </select>
         </span>
         <span>
-          <input type="checkbox" checked="true" id="englishTitles" onchange="parseData(data)" />
+          <input type="checkbox" checked="true" id="englishTitles" />
           <label for="englishTitles">Prefer English Titles</label>
         </span>
         <span>
-          <input type="checkbox" checked="true" id="subRecs" onchange="parseData(data)" />
+          <input type="checkbox" checked="true" id="subRecs" />
           <label for="subRecs">Sub-Recomendations</label>
         </span>
       </span>
@@ -216,33 +218,35 @@
     </div>
     <script>
       const table = document.querySelector('.content');
-      let data = {};
+      let data = null;
       let recs,
         ignore = [];
       // fetchData();
-      function fetchData() {
+      async function fetchData() {
         table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
         // fetch('mangarecs.json')
-        fetch('https://graphql.anilist.co', {
+        const response = await fetch('https://graphql.anilist.co', {
           method: 'post',
           mode: 'cors',
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
-            'Cache-Control': 'max-stale=36000, private',
+            'Cache-Control': 'max-stale=36000, force-cache, private',
           },
+          cache: 'force-cache',
           body: JSON.stringify({
             query:
               'query($user:String){collection:MediaListCollection(userName:$user,type:MANGA,perChunk:500,chunk:1,status_in:[CURRENT,COMPLETED],forceSingleCompletedList:true,sort:UPDATED_TIME_DESC){hasNextChunk statuses:lists{status name list:entries{manga:media{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult}}}}}}}}}}}',
             variables: { user: document.querySelector('#username').value },
           }),
-        })
-          .then(response => response.json())
-          .then(response => {
-            data = response.data;
-            parseData(data);
-          })
-          .catch(e => window.alert(`Oops: ${e}`));
+        });
+        if (!response.ok) {
+          window.alert(`Oops!\n${response.status} - ${response.statusText}`);
+          return false;
+        }
+        const json = await response.json();
+        data = json.data;
+        parseData(data);
       }
 
       function parseRecs(manga) {
@@ -281,6 +285,10 @@
       }
 
       function parseData(data) {
+        if (!data) {
+          console.log('Nothing to parse!');
+          return false;
+        }
         console.log('Parsing...');
         const englishTitles = document.querySelector('#englishTitles').checked;
         table.innerHTML = '';
@@ -351,12 +359,15 @@
             header.textContent = rec.isAdult ? `🔞 ${title}` : title;
             textContainer.appendChild(header.cloneNode(true));
 
-            text.innerText =
-              '• ' +
-              [...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native])]
-                .filter(i => (i && i != title ? i : false))
-                .join('\n• ');
-            textContainer.appendChild(text.cloneNode(true));
+            const altTitles = [
+              ...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native]),
+            ]
+              .filter(i => (i && i != title ? i : false))
+              .join('\n• ');
+            if (altTitles) {
+              text.innerText = `• ${altTitles}`;
+              textContainer.appendChild(text.cloneNode(true));
+            }
             cell.appendChild(textContainer.cloneNode(true));
 
             cell.classList.add('title');
@@ -391,6 +402,16 @@
           });
         console.log('Parsed!');
       }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        document
+          .querySelectorAll('#adult, #englishTitles, #subRecs')
+          .forEach(el => el.addEventListener('change', event => parseData(data)));
+        document.querySelector('#login').addEventListener('submit', event => {
+          event.preventDefault();
+          fetchData();
+        });
+      });
     </script>
   </body>
 </html>
