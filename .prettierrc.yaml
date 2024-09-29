@@ -1,0 +1,13 @@
+singleQuote: true
+arrowParens: avoid
+printWidth: 100
+tabWidth: 2
+semi: true
+trailingComma: es5
+htmlWhitespaceSensitivity: css
+plugins: ['prettier-plugin-css-order']
+cssDeclarationSorterOrder: alphabetical
+overrides:
+  - files: '*.htm'
+    options:
+      printWidth: 150
