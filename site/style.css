@@ -99,3 +99,23 @@ img {
 .header > .title {
   margin-top: 0.5em;
 }
+@media only screen and (max-width: 640px) {
+  .settings {
+    flex-direction: column;
+  }
+  .container {
+    left: 5%;
+    width: 90%;
+  }
+  .header {
+    display: none;
+  }
+  .entry {
+    grid-template-areas: 'cover' 'sources' 'title' 'details';
+    grid-template-columns: auto;
+    grid-template-rows: repeat(4, auto);
+  }
+  .title > div > p {
+    margin-bottom: 1.5em;
+  }
+}
