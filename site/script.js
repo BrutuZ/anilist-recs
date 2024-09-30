@@ -28,13 +28,19 @@ async function fetchData() {
 }
 
 function parseRecs(manga) {
+  const country = [];
+  for (const option of document.querySelector('#country').options) {
+    if (option.selected) {
+      country.push(option.value);
+    }
+  }
   manga.recommendations.entries.forEach(entry => {
     const rec = entry.mediaRecommendation;
     if (
       !rec ||
       ignore.includes(rec.id) ||
       rec.isAdult == document.querySelector('#adult').selectedIndex ||
-      rec.countryOfOrigin != 'JP'
+      !country.includes(rec.countryOfOrigin)
       // || e.rating < 1
     )
       return;
@@ -188,13 +194,16 @@ function filterTag(ev) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document
-    .querySelectorAll('#adult, #englishTitles, #subRecs')
-    .forEach(el => el.addEventListener('change', () => parseData(data)));
+  // Call API from login form
   document.querySelector('#login').addEventListener('submit', event => {
     event.preventDefault();
     fetchData();
   });
+
+  // Refilter on settings change
+  document
+    .querySelectorAll('#adult, #englishTitles, #subRecs, #country')
+    .forEach(el => el.addEventListener('change', () => parseData(data)));
   DEV: fetchData();
 });
 
