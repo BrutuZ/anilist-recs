@@ -43,22 +43,17 @@ function parseRecs(manga) {
       // || e.rating < 1
     )
       return;
+    const recObj = {
+      cover: manga.cover.medium,
+      title: manga.title.english || manga.title.romaji,
+      url: manga.url,
+    };
     if (recs.find(e => e.id == rec.id)) {
       const index = recs.findIndex(e => e.id == rec.id);
-      recs[index].recommended.push({
-        cover: manga.cover.medium || manga.cover.large,
-        title: manga.title.english || manga.title.romaji,
-        url: manga.url,
-      });
+      recs[index].recommended.push(recObj);
       return;
     } else {
-      rec.recommended = [
-        {
-          cover: manga.cover.medium || manga.cover.large,
-          title: manga.title.english || manga.title.romaji,
-          url: manga.url,
-        },
-      ];
+      rec.recommended = [recObj];
       recs.push(rec);
       if (rec.recommendations && document.querySelector('#subRecs').checked) {
         parseRecs(rec);
