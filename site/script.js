@@ -3,12 +3,12 @@ const table = document.querySelector('.content');
 let data = null;
 let recs,
   ignore = [];
-DEV: fetchData();
 async function fetchData() {
   table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
-  const response = DEV
-    ? await fetch('_.._/mangarecs.json')
-    : await fetch('https://graphql.anilist.co', {
+  console.log('Fetching...');
+  const json = DEV
+    ? await getData('_.._/mangarecs.json')
+    : await getData('https://graphql.anilist.co', {
         method: 'post',
         mode: 'cors',
         headers: {
@@ -23,11 +23,6 @@ async function fetchData() {
           variables: { user: document.querySelector('#username').value },
         }),
       });
-  if (!response.ok) {
-    window.alert(`Oops!\n${response.status} - ${response.statusText}`);
-    return false;
-  }
-  const json = await response.json();
   data = json.data;
   parseData(data);
 }
@@ -195,9 +190,66 @@ function filterTag(ev) {
 document.addEventListener('DOMContentLoaded', () => {
   document
     .querySelectorAll('#adult, #englishTitles, #subRecs')
-    .forEach(el => el.addEventListener('change', event => parseData(data)));
+    .forEach(el => el.addEventListener('change', () => parseData(data)));
   document.querySelector('#login').addEventListener('submit', event => {
     event.preventDefault();
     fetchData();
   });
+  DEV: fetchData();
 });
+
+// Try to get data from the cache, but fall back to fetching it live.
+async function getData(url, options = {}) {
+  const cacheName = 'MangaRecs';
+  let cachedData = await getCachedData(cacheName, url);
+
+  if (cachedData) {
+    console.log('Retrieved cached data');
+    return cachedData;
+  }
+
+  console.log('Fetching fresh data');
+
+  const cacheStorage = await caches.open(cacheName);
+  await fetch(url, options).then(response => {
+    if (!response.ok) {
+      window.alert(`Request failed!\n${response.status} - ${response.statusText}`);
+      return false;
+    }
+    return cacheStorage.put(url, response);
+  });
+
+  cachedData = await getCachedData(cacheName, url);
+  await deleteOldCaches(cacheName);
+
+  return cachedData;
+}
+
+// Get data from the cache.
+async function getCachedData(cacheName, url) {
+  const cacheStorage = await caches.open(cacheName);
+  const cachedResponse = await cacheStorage.match(url);
+
+  if (
+    !cachedResponse ||
+    !cachedResponse.ok ||
+    Date.now() > Date.parse(cachedResponse.headers.date) + 36000 * 1000 // Invalidate if cache is over 3h old
+  ) {
+    return false;
+  }
+
+  return await cachedResponse.json();
+}
+
+// Delete any old caches to respect user's disk space.
+async function deleteOldCaches(currentCache) {
+  const keys = await caches.keys();
+
+  for (const key of keys) {
+    const isOurCache = key == 'MangaRecs';
+    if (currentCache === key || !isOurCache) {
+      continue;
+    }
+    caches.delete(key);
+  }
+}
