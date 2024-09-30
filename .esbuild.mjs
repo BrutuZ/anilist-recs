@@ -34,6 +34,6 @@ if (productionMode) {
   await build.watch();
   await build.serve({
     servedir: 'build',
-    port: 3000,
+    port: 8080,
   });
 }
