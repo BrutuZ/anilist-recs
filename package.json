@@ -14,7 +14,7 @@
     "cleanup": "rm -rf build",
     "build": "npm run cleanup && node .esbuild.mjs",
     "publish": "npm run build production",
-    "dev": "npm run build development"
+    "dev": "start http://127.0.0.1:8080 && npm run build development"
   },
   "lint-staged": {
     "**/*.{htm*}": "prettier --write"
