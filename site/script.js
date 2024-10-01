@@ -47,10 +47,8 @@ async function fetchData() {
 
 function parseRecs(manga) {
   const country = [];
-  for (const option of document.querySelector('#country').options) {
-    if (option.selected) {
-      country.push(option.value);
-    }
+  for (const option of document.querySelectorAll('#country > input')) {
+    if (option.checked) country.push(option.id);
   }
   manga.recommendations.entries.forEach(entry => {
     const rec = entry.mediaRecommendation;
@@ -58,7 +56,7 @@ function parseRecs(manga) {
       !rec ||
       ignore.includes(rec.id) ||
       rec.isAdult == document.querySelector('#adult').selectedIndex ||
-      !country.includes(rec.countryOfOrigin)
+      (country.length > 0 && !country?.includes(rec.countryOfOrigin))
       // || e.rating < 1
     )
       return;
