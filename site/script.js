@@ -21,6 +21,7 @@ const table = document.querySelector('.content');
 let data = null;
 let recs,
   ignore = [];
+const flags = { CN: '🇨🇳 ', KR: '🇰🇷 ', JP: '🇯🇵 ' };
 async function fetchData() {
   table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
   console.log('Fetching...');
@@ -146,7 +147,9 @@ function parseData(data) {
       cell.innerHTML = '';
       const textContainer = document.createElement('div');
       const header = document.createElement('h3');
-      const title = englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
+      const title =
+        flags[rec.countryOfOrigin] +
+        (englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji);
       header.textContent = rec.isAdult ? `🔞 ${title}` : title;
       textContainer.appendChild(header.cloneNode(true));
 
