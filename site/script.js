@@ -217,9 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Refilter on settings change
-  document
-    .querySelectorAll('#adult, #englishTitles, #subRecs, #country')
-    .forEach(el => el.addEventListener('change', () => parseData(data)));
+  document.querySelector('#filters').addEventListener('click', () => parseData(data));
   DEV: fetchData();
 });
 
