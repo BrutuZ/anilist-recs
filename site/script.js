@@ -152,7 +152,15 @@ function parseData(data) {
         (englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji);
       header.textContent = rec.isAdult ? `🔞 ${title}` : title;
       textContainer.appendChild(header.cloneNode(true));
+      cell.appendChild(textContainer.cloneNode(true));
 
+      cell.classList.add('title');
+      entry.appendChild(cell.cloneNode(true));
+      cell.removeAttribute('class');
+
+      // ALT. TITLES
+      cell.innerHTML = '';
+      textContainer.innerHTML = '';
       const altTitles = [
         ...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native]),
       ]
@@ -164,7 +172,19 @@ function parseData(data) {
       }
       cell.appendChild(textContainer.cloneNode(true));
 
-      cell.classList.add('title');
+      cell.classList.add('alt-titles');
+      entry.appendChild(cell.cloneNode(true));
+      cell.removeAttribute('class');
+
+      // TITLES FOR LANDSCAPE
+      cell.innerHTML = '';
+      textContainer.innerHTML = '';
+      entry
+        .querySelectorAll('.title h3, .alt-titles p')
+        .forEach(node => textContainer.appendChild(node.cloneNode(true)));
+      cell.appendChild(textContainer.cloneNode(true));
+
+      cell.classList.add('titles');
       entry.appendChild(cell.cloneNode(true));
       cell.removeAttribute('class');
 
