@@ -2,6 +2,8 @@
 :root {
   --color-bg: #0b1622;
   --color-fg: #151f2e;
+  --color-button-bg: #3db4f2;
+  --color-button-text: #edf1f5;
   --color-text: #9fadbd;
   --color-tag: #d3e7f3;
   --color-tag-active: #81f066;
@@ -25,11 +27,18 @@ body {
 }
 
 input,
-select,
-button {
+select {
   background-color: var(--color-bg);
   border-radius: 5px;
   color: var(--color-text);
+}
+button {
+  background-color: var(--color-button-bg);
+  border-radius: 5px;
+  border-style: none;
+  color: var(--color-button-text);
+  cursor: pointer;
+  padding: 0.25em 0.5em;
 }
 
 /* CONTAINER */
