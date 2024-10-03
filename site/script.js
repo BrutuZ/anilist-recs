@@ -17,25 +17,27 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
+const cacheName = 'MangaRecs';
+const apiUrl = 'https://graphql.anilist.co';
 const table = document.querySelector('.content');
 let data = null;
 let recs,
   ignore = [];
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
+getCachedData(apiUrl); // Clear expired cache (with extra steps)
+
 async function fetchData() {
   table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
   console.log('Fetching...');
   const json = DEV
-    ? await getData('_.._/mangarecs.json')
-    : await getData('https://graphql.anilist.co', {
+    ? await fetch('_.._/mangarecs.json').then(response => response.json())
+    : await getData(apiUrl, {
         method: 'post',
         mode: 'cors',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'Cache-Control': 'max-stale=36000, force-cache, private',
         },
-        cache: 'force-cache',
         body: JSON.stringify({
           query:
             'query($user:String){collection:MediaListCollection(userName:$user,type:MANGA,perChunk:500,chunk:1,status_in:[CURRENT,COMPLETED],forceSingleCompletedList:true,sort:UPDATED_TIME_DESC){hasNextChunk statuses:lists{status name list:entries{manga:media{title{romaji english native} id url:siteUrl cover:coverImage{medium} countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult}}}}}}}}}}}',
@@ -246,8 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Try to get data from the cache, but fall back to fetching it live.
 async function getData(url, options = {}) {
-  const cacheName = 'MangaRecs';
-  let cachedData = await getCachedData(cacheName, url);
+  let cachedData = await getCachedData(url);
 
   if (cachedData) {
     console.log('Retrieved cached data');
@@ -259,28 +260,29 @@ async function getData(url, options = {}) {
   const cacheStorage = await caches.open(cacheName);
   await fetch(url, options).then(response => {
     if (!response.ok) {
-      window.alert(`Request failed!\n${response.status} - ${response.statusText}`);
+      alert(`Request failed!\n${response.status} - ${response.statusText}`);
       return false;
     }
     return cacheStorage.put(url, response);
   });
 
-  cachedData = await getCachedData(cacheName, url);
+  cachedData = await getCachedData(url);
   await deleteOldCaches(cacheName);
 
   return cachedData;
 }
 
 // Get data from the cache.
-async function getCachedData(cacheName, url) {
+async function getCachedData(url) {
   const cacheStorage = await caches.open(cacheName);
   const cachedResponse = await cacheStorage.match(url);
 
   if (
     !cachedResponse ||
     !cachedResponse.ok ||
-    Date.now() > Date.parse(cachedResponse.headers.date) + 36000 * 1000 // Invalidate if cache is over 3h old
+    Date.now() < Date.parse(cachedResponse.headers.date) + 36000000 // Invalidate if cache is over 3h old
   ) {
+    await caches.delete(cacheName);
     return false;
   }
 
@@ -292,7 +294,7 @@ async function deleteOldCaches(currentCache) {
   const keys = await caches.keys();
 
   for (const key of keys) {
-    const isOurCache = key == 'MangaRecs';
+    const isOurCache = key == cacheName;
     if (currentCache === key || !isOurCache) {
       continue;
     }
