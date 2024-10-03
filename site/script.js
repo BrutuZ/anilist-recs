@@ -145,22 +145,22 @@ function parseData(data) {
       entry.appendChild(cell.cloneNode(true));
       cell.removeAttribute('class');
 
-      // TITLE
+      // TITLE (PORTRAIT)
       cell.innerHTML = '';
       const textContainer = document.createElement('div');
       const header = document.createElement('h3');
       const title = englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
-      header.textContent = rec.isAdult
-        ? `🔞${flags[rec.countryOfOrigin]} ${title}`
-        : `${flags[rec.countryOfOrigin]} ${title}`;
-      textContainer.appendChild(header.cloneNode(true));
+      header.textContent = `${rec.isAdult ? '🔞' : ''}${flags[rec.countryOfOrigin]} ${title}`;
+      if (englishTitles && rec.title.english) header.classList.add('licensed');
+      textContainer.appendChild(header);
       cell.appendChild(textContainer.cloneNode(true));
 
+      if (englishTitles && rec.title.english) header.classList.add('licensed');
       cell.classList.add('title');
       entry.appendChild(cell.cloneNode(true));
       cell.removeAttribute('class');
 
-      // ALT. TITLES
+      // ALT. TITLES (PORTRAIT)
       cell.innerHTML = '';
       textContainer.innerHTML = '';
       const altTitles = [

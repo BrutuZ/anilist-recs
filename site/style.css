@@ -116,6 +116,9 @@ img {
 .titles h3 {
   font-weight: 400;
 }
+.licensed {
+  font-style: italic;
+}
 
 .titles > div,
 .details > div {
