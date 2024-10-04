@@ -22,6 +22,7 @@ const apiUrl = 'https://graphql.anilist.co';
 const table = document.querySelector('.content');
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
 let data = null,
+  tagFilters = [],
   recs = [],
   ignore = [];
 deleteOldCaches(); // Clear expired cache (with extra steps)
@@ -242,13 +243,21 @@ async function parseData() {
 
 function filterTag(ev) {
   ev.preventDefault();
-  document
-    .querySelectorAll(`div.entry:not(.header, :has([data-tag="${this.dataset.tag}"])`)
-    .forEach(entry => {
-      entry.classList.toggle('filtered');
-    });
-  document.querySelectorAll(`[data-tag="${this.dataset.tag}"]`).forEach(tag => {
-    tag.classList.toggle('filtered');
+  const tagName = this.dataset.tag;
+  if (tagFilters.includes(tagName)) tagFilters.splice(tagFilters.indexOf(tagName), 1);
+  else tagFilters.push(tagName);
+
+  document.querySelectorAll('.content > .entry').forEach(entry => {
+    if (tagFilters.length == 0) {
+      entry.hidden = false;
+      return;
+    }
+
+    const tagElement = entry.querySelector(`[data-tag="${tagName}"]`);
+    if (tagElement) tagElement.classList.toggle('filtered');
+    const filtered = [];
+    entry.querySelectorAll('.tag.filtered').forEach(f => filtered.push(f.dataset.tag));
+    entry.hidden = !tagFilters.every(f => filtered.includes(f));
   });
 }
 

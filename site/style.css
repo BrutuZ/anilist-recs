@@ -17,6 +17,10 @@ body {
     'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 /* SETTINGS */
 .settings {
   display: flex;
@@ -73,10 +77,7 @@ button {
 .entry > div {
   padding: 1.5px 0.5em;
 }
-.entry.filtered {
-  display: none !important;
-}
-.entry:nth-child(even of :not(.filtered)) {
+.entry:nth-child(even of :not([hidden])) {
   background-color: var(--color-fg);
 }
 
