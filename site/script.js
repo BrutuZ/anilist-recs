@@ -138,6 +138,10 @@ async function parseData() {
       img.src = rec.cover.large;
 
       link.appendChild(img.cloneNode(true));
+
+      text.textContent = `${rec.status.charAt(0)}${rec.status.substr(1).toLowerCase()} 💙${rec.meanScore}%`;
+      link.appendChild(text.cloneNode(true));
+
       cell.appendChild(link.cloneNode(true));
       cell.classList.add('cover');
       entry.appendChild(cell.cloneNode(true));
@@ -257,8 +261,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Refilter on settings change
   document.querySelector('#filters').addEventListener('click', async () => await parseData());
-  document.querySelector('#filters').addEventListener('click', () => parseData(data));
-  DEV: fetchData();
   DEV: await parseData();
 });
 

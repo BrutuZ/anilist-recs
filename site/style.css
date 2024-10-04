@@ -94,6 +94,13 @@ button {
   flex-flow: wrap;
   justify-content: space-evenly;
 }
+.cover a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+.cover p {
+  margin-top: 0;
+}
 img {
   border-radius: 3%;
 }
