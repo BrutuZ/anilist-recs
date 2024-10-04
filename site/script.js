@@ -17,35 +17,50 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
-const cacheName = 'MangaRecs';
+const cacheBaseName = 'MangaRecs';
 const apiUrl = 'https://graphql.anilist.co';
 const table = document.querySelector('.content');
-let data = null;
-let recs,
-  ignore = [];
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
-getCachedData(apiUrl); // Clear expired cache (with extra steps)
+let data = null,
+  recs = [],
+  ignore = [];
+deleteOldCaches(); // Clear expired cache (with extra steps)
 
-async function fetchData() {
+async function fetchData(simple = false) {
   table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
   console.log('Fetching...');
+  const recsSubQuery =
+    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
+  const simpleQuery =
+    'query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true sort: UPDATED_TIME_DESC){statuses: lists{status list: entries {manga: media {id}}}}}';
+  const recsQuery = `query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true status_in: CURRENT sort: UPDATED_TIME_DESC){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
   const json = DEV
     ? await fetch('_.._/mangarecs.json').then(response => response.json())
-    : await getData(apiUrl, {
-        method: 'post',
-        mode: 'cors',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
+    : await getData(
+        apiUrl,
+        {
+          method: 'post',
+          mode: 'cors',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: simple ? simpleQuery : recsQuery,
+            variables: { user: document.querySelector('#username').value.trim() },
+          }),
         },
-        body: JSON.stringify({
-          query:
-            'query($user:String){collection:MediaListCollection(userName:$user,type:MANGA,perChunk:500,chunk:1,status_in:[CURRENT,COMPLETED],forceSingleCompletedList:true,sort:UPDATED_TIME_DESC){hasNextChunk statuses:lists{status name list:entries{manga:media{title{romaji english native} id url:siteUrl cover:coverImage{medium} countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult recommendations(sort:RATING_DESC){entries:nodes{rating mediaRecommendation{title{romaji english native}synonyms id url:siteUrl tags{name isMediaSpoiler}cover:coverImage{medium large}description countryOfOrigin isAdult}}}}}}}}}}}',
-          variables: { user: document.querySelector('#username').value.trim() },
-        }),
-      });
-  data = json.data;
-  parseData(data);
+        simple
+      );
+  if (simple) {
+    ignore = json.data.collection.statuses // .filter(s => s.status != 'CURRENT')
+      .flatMap(statuses => statuses.list)
+      .map(entry => entry.manga.id);
+    console.log('Ignored entries:', ignore);
+  } else {
+    data = json.data;
+    console.log('Reading entries', data);
+  }
 }
 
 function parseRecs(manga) {
@@ -82,19 +97,19 @@ function parseRecs(manga) {
   });
 }
 
-function parseData(data) {
+async function parseData() {
+  if (ignore.length == 0) {
+    console.log('Nothing to ignore!');
+    await fetchData(true);
+  }
   if (!data) {
     console.log('Nothing to parse!');
-    return false;
+    await fetchData();
   }
   console.log('Parsing...');
   const englishTitles = document.querySelector('#englishTitles').checked;
   table.innerHTML = '';
-  const completed = data.collection.statuses
-    .find(s => s.status == 'COMPLETED')
-    .list.map(entry => entry.manga);
   const current = data.collection.statuses.find(s => s.status == 'CURRENT').list.map(e => e.manga);
-  ignore = [...completed.map(m => m.id), ...current.map(m => m.id)];
   recs = [];
 
   console.log('Currents...');
@@ -155,7 +170,6 @@ function parseData(data) {
       textContainer.appendChild(header);
       cell.appendChild(textContainer.cloneNode(true));
 
-      if (englishTitles && rec.title.english) header.classList.add('licensed');
       cell.classList.add('title');
       entry.appendChild(cell.cloneNode(true));
       cell.removeAttribute('class');
@@ -234,54 +248,53 @@ function filterTag(ev) {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Call API from login form
-  document.querySelector('#login').addEventListener('submit', event => {
+  document.querySelector('#login').addEventListener('submit', async event => {
     event.preventDefault();
-    fetchData();
+    await parseData();
   });
 
   // Refilter on settings change
+  document.querySelector('#filters').addEventListener('click', async () => await parseData());
   document.querySelector('#filters').addEventListener('click', () => parseData(data));
   DEV: fetchData();
+  DEV: await parseData();
 });
 
 // Try to get data from the cache, but fall back to fetching it live.
-async function getData(url, options = {}) {
-  let cachedData = await getCachedData(url);
+async function getData(url, options = {}, simple = false) {
+  const cacheName = `${cacheBaseName}-${simple ? 'onList' : 'recs'}`;
+  let cachedData = await getCachedData(cacheName, url);
 
   if (cachedData) {
-    console.log('Retrieved cached data');
+    console.log('Retrieved cached data:', cacheName);
     return cachedData;
   }
 
-  console.log('Fetching fresh data');
+  console.log('Fetching fresh data:', cacheName);
 
   const cacheStorage = await caches.open(cacheName);
   await fetch(url, options).then(response => {
     if (!response.ok) {
-      alert(`Request failed!\n${response.status} - ${response.statusText}`);
+      table.innerHTML = `<h1>Request failed!<br />${response.status} - ${response.statusText}</h1>`;
       return false;
     }
     return cacheStorage.put(url, response);
   });
 
-  cachedData = await getCachedData(url);
+  cachedData = await getCachedData(cacheName, url);
   await deleteOldCaches(cacheName);
 
   return cachedData;
 }
 
 // Get data from the cache.
-async function getCachedData(url) {
+async function getCachedData(cacheName, url) {
   const cacheStorage = await caches.open(cacheName);
   const cachedResponse = await cacheStorage.match(url);
 
-  if (
-    !cachedResponse ||
-    !cachedResponse.ok ||
-    Date.now() < Date.parse(cachedResponse.headers.date) + 36000000 // Invalidate if cache is over 3h old
-  ) {
+  if (!cachedResponse || !cachedResponse.ok || expiredCache(cachedResponse.headers.date)) {
     await caches.delete(cacheName);
     return false;
   }
@@ -290,14 +303,20 @@ async function getCachedData(url) {
 }
 
 // Delete any old caches to respect user's disk space.
-async function deleteOldCaches(currentCache) {
+async function deleteOldCaches(cacheName = cacheBaseName) {
   const keys = await caches.keys();
 
   for (const key of keys) {
-    const isOurCache = key == cacheName;
-    if (currentCache === key || !isOurCache) {
+    const isOurCache = key.startsWith(cacheBaseName);
+    const cachedResponse = await (await caches.open(key)).match(apiUrl);
+    if (cacheName === key || isOurCache || !expiredCache(cachedResponse.headers.date)) {
       continue;
     }
+    console.log(`Deleting ${key}`);
     caches.delete(key);
   }
+}
+
+function expiredCache(time) {
+  return Date.now() < Date.parse(time) + 36000000; // Invalidate if cache is over 3h old
 }
