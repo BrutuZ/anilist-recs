@@ -20,6 +20,23 @@ body {
 [hidden] {
   display: none !important;
 }
+#top-anchor {
+  height: 1px;
+  left: 0;
+  position: absolute;
+  top: 110%;
+  width: 1px;
+}
+#top {
+  align-items: center;
+  bottom: 1rem;
+  cursor: pointer;
+  display: flex;
+  font-size: xx-large;
+  justify-content: center;
+  position: fixed;
+  right: 1rem;
+}
 
 /* SETTINGS */
 .settings {

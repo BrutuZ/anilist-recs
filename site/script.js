@@ -271,6 +271,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Refilter on settings change
   document.querySelector('#filters').addEventListener('click', async () => await parseData());
   DEV: await parseData();
+
+  document
+    .querySelector('#top')
+    .addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+  const observer = new IntersectionObserver(entries => {
+    document.querySelector('#top').hidden = !(entries[0].boundingClientRect.y < 0);
+  });
+  observer.observe(document.querySelector('#top-anchor'));
 });
 
 // Try to get data from the cache, but fall back to fetching it live.
