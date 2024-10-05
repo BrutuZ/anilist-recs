@@ -22,9 +22,8 @@ body {
 }
 #top-anchor {
   height: 1px;
-  left: 0;
   position: absolute;
-  top: 110%;
+  top: 150vh;
   width: 1px;
 }
 #top {
@@ -32,10 +31,11 @@ body {
   bottom: 1rem;
   cursor: pointer;
   display: flex;
-  font-size: xx-large;
+  filter: invert();
+  font-size: 2rem;
   justify-content: center;
+  left: calc(100vw - 4rem);
   position: fixed;
-  right: 1rem;
 }
 
 /* SETTINGS */

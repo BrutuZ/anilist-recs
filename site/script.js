@@ -238,6 +238,7 @@ async function parseData() {
   document
     .querySelectorAll('.tag')
     .forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
+  document.querySelector('#top-anchor').hidden = false;
   console.log('Parsed!');
 }
 
