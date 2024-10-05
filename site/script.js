@@ -28,7 +28,8 @@ let data = null,
 deleteOldCaches(); // Clear expired cache (with extra steps)
 
 async function fetchData(simple = false) {
-  table.innerHTML = '<h1>Calling AniList API...<br />(This may take a while)</h1>';
+  table.innerHTML =
+    '<h1>Calling AniList API...<br />(This may take a while)<br />(∪.∪ )...zzz</h1>';
   console.log('Fetching...');
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
@@ -83,6 +84,7 @@ function parseRecs(manga) {
       cover: manga.cover.medium,
       title: manga.title.english || manga.title.romaji,
       url: manga.url,
+      rating: entry.rating,
     };
     if (recs.find(e => e.id == rec.id)) {
       const index = recs.findIndex(e => e.id == rec.id);
@@ -107,18 +109,41 @@ async function parseData() {
     console.log('Nothing to parse!');
     await fetchData();
   }
+  table.innerHTML = '<h1>Successfully stalked your profile<br />(⓿_⓿)</h1>';
   console.log('Parsing...');
   const englishTitles = document.querySelector('#englishTitles').checked;
-  table.innerHTML = '';
   const current = data.collection.statuses.find(s => s.status == 'CURRENT').list.map(e => e.manga);
   recs = [];
 
   console.log('Currents...');
   current.forEach(manga => parseRecs(manga));
   console.log('Currents DONE');
+  table.innerHTML = '';
 
   recs
-    // .sort((a, b) => b.recommended.length - a.recommended.length)
+    .sort((a, b) => {
+      switch (document.querySelector('#sortMode').value) {
+        case 'default':
+        default:
+          return b - a;
+        case 'score':
+          return b.meanScore - a.meanScore;
+        case 'publishing':
+          return b.status - a.status;
+        case 'recCount':
+          return b.recommended.length - a.recommended.length;
+        case 'recsTotal':
+          return (
+            b.recommended.map(r => r.rating).reduce((p, n) => p + n, 0) -
+            a.recommended.map(r => r.rating).reduce((p, n) => p + n, 0)
+          );
+        case 'recsAvg':
+          return (
+            b.recommended.map(r => r.rating).reduce((p, n) => p + n, 0) / b.recommended.length -
+            a.recommended.map(r => r.rating).reduce((p, n) => p + n, 0) / a.recommended.length
+          );
+      }
+    })
     .forEach(rec => {
       const entry = document.createElement('div');
       const cell = document.createElement('div');
