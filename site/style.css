@@ -166,10 +166,15 @@ img {
   display: inline-flex;
   flex-direction: column;
   gap: 20px;
-  justify-content: space-evenly;
+  justify-content: space-between;
 }
 
 /* TAGS */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
 .tag {
   background-color: var(--color-tag);
   border-radius: 10px;

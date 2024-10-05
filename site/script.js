@@ -216,6 +216,7 @@ async function parseData() {
       textContainer.appendChild(text.cloneNode(true));
 
       text.innerHTML = '';
+      text.classList.add('tags');
       rec.tags
         ?.filter(tag => !tag.isMediaSpoiler)
         .map(tag => tag.name)
@@ -227,6 +228,7 @@ async function parseData() {
           text.appendChild(container);
         });
       if (text.innerHTML) textContainer.appendChild(text.cloneNode(true));
+      text.removeAttribute('class');
 
       cell.appendChild(textContainer.cloneNode(true));
       cell.classList.add('details');
