@@ -366,5 +366,5 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 }
 
 function expiredCache(time) {
-  return Date.now() < Date.parse(time) + 36000000; // Invalidate if cache is over 3h old
+  return Date.now() < Date.parse(time) + 10800000; // Invalidate if cache is over 3h old
 }
