@@ -31,11 +31,11 @@ body {
   bottom: 1rem;
   cursor: pointer;
   display: flex;
-  filter: invert();
   font-size: 2rem;
   justify-content: center;
   left: calc(100vw - 4rem);
   position: fixed;
+  text-shadow: var(--color-tag) 0 0 0.25em;
 }
 
 /* SETTINGS */
