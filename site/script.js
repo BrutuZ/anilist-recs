@@ -28,8 +28,6 @@ let data = null,
 deleteOldCaches(); // Clear expired cache (with extra steps)
 
 async function fetchData(simple = false) {
-  table.innerHTML =
-    '<h1>Calling AniList API...<br />(This may take a while)<br />(∪.∪ )...zzz</h1>';
   console.log('Fetching...');
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
@@ -103,13 +101,15 @@ function parseRecs(manga) {
 async function parseData() {
   if (ignore.length == 0) {
     console.log('Nothing to ignore!');
+    table.innerHTML = '<h1>Stalking your profile<br />(⓿_⓿)</h1>';
     await fetchData(true);
   }
   if (!data) {
     console.log('Nothing to parse!');
+    table.innerHTML =
+      '<h1>Digging Recommentations...<br />(This may take a while)<br />(∪.∪ )...zzz</h1>';
     await fetchData();
   }
-  table.innerHTML = '<h1>Successfully stalked your profile<br />(⓿_⓿)</h1>';
   console.log('Parsing...');
   const englishTitles = document.querySelector('#englishTitles').checked;
   const current = data.collection.statuses.find(s => s.status == 'CURRENT').list.map(e => e.manga);
@@ -243,7 +243,7 @@ async function parseData() {
       text.innerHTML = '';
       text.classList.add('tags');
       rec.tags
-        ?.filter(tag => !tag.isMediaSpoiler)
+        ?.filter(tag => (document.querySelector('#spoilers').checked ? !tag.isMediaSpoiler : true))
         .map(tag => tag.name)
         .forEach(tag => {
           const container = document.createElement('div');
