@@ -30,7 +30,7 @@ deleteOldCaches(); // Clear expired cache (with extra steps)
 async function fetchData(simple = false) {
   console.log('Fetching...');
   const recsSubQuery =
-    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
+    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
   const simpleQuery =
     'query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true sort: UPDATED_TIME_DESC){statuses: lists{status list: entries {manga: media {id}}}}}';
   const recsQuery = `query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true status_in: CURRENT sort: UPDATED_TIME_DESC){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
@@ -132,6 +132,8 @@ async function parseData() {
           return b.status - a.status;
         case 'recCount':
           return b.recommended.length - a.recommended.length;
+        case 'popularity':
+          return b.popularity - a.popularity;
         case 'recsTotal':
           return (
             b.recommended.map(r => r.rating).reduce((p, n) => p + n, 0) -
