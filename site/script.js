@@ -323,6 +323,7 @@ async function getData(url, options = {}, simple = false) {
   const cacheName = `${cacheBaseName}-${simple ? 'onList' : 'recs'}`;
   let cachedData = await getCachedData(cacheName, url);
 
+  document.querySelector('#cached').hidden = Boolean(cachedData);
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
     return cachedData;

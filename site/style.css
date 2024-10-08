@@ -20,6 +20,11 @@ body {
 [hidden] {
   display: none !important;
 }
+
+#cached {
+  position: absolute;
+}
+
 #top-anchor {
   height: 1px;
   position: absolute;
