@@ -33,6 +33,13 @@ let data = null,
 deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
+  const userName =
+    document.querySelector('#username').value.trim() || localStorage.getItem('userName');
+  if (!userName) {
+    table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
+    throw new Error('No username');
+  }
+  localStorage.setItem('userName', userName);
   console.log('Fetching...');
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
@@ -40,7 +47,7 @@ async function fetchData(simple = false) {
     'query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true sort: UPDATED_TIME_DESC){statuses: lists{status list: entries {manga: media {id}}}}}';
   const recsQuery = `query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true status_in: CURRENT sort: UPDATED_TIME_DESC){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
   const json = DEV
-    ? await fetch('_.._/mangarecs.json').then(response => response.json())
+    ? await fetch(`_.._/manga${simple ? 'list' : 'recs'}.json`).then(response => response.json())
     : await getData(
         apiUrl,
         {
@@ -52,13 +59,14 @@ async function fetchData(simple = false) {
           },
           body: JSON.stringify({
             query: simple ? simpleQuery : recsQuery,
-            variables: { user: document.querySelector('#username').value.trim() },
+            variables: { user: userName },
           }),
         },
+        userName,
         simple
       );
   if (simple) {
-    ignore = json.data.collection.statuses // .filter(s => s.status != 'CURRENT')
+    ignore = json.data.collection.statuses
       .flatMap(statuses => statuses.list)
       .map(entry => entry.manga.id);
     console.log('Ignored entries:', ignore);
@@ -312,6 +320,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     .querySelector('#top')
     .addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
+  document.querySelector('#username').value = localStorage.getItem('userName');
+
   const observer = new IntersectionObserver(entries => {
     document.querySelector('#top').hidden = !(entries[0].boundingClientRect.y < 0);
   });
@@ -319,11 +329,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Try to get data from the cache, but fall back to fetching it live.
-async function getData(url, options = {}, simple = false) {
-  const cacheName = `${cacheBaseName}-${simple ? 'onList' : 'recs'}`;
+async function getData(url, options = {}, userName = null, simple = false) {
+  const cacheName = `${cacheBaseName}-${userName}-${simple ? 'onList' : 'recs'}`;
   let cachedData = await getCachedData(cacheName, url);
 
-  document.querySelector('#cached').hidden = Boolean(cachedData);
+  document.querySelector('#cached').hidden = !Boolean(cachedData);
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
     return cachedData;
@@ -334,7 +344,7 @@ async function getData(url, options = {}, simple = false) {
   const cacheStorage = await caches.open(cacheName);
   await fetch(url, options).then(response => {
     if (!response.ok) {
-      table.innerHTML = `<h1>Request failed!<br />${response.status} - ${response.statusText}</h1>`;
+      table.innerHTML = `<h1>Request failed!<br />${response.status} ${response.statusText}</h1>`;
       return false;
     }
     return cacheStorage.put(url, response);
