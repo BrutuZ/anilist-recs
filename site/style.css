@@ -47,7 +47,11 @@ body {
   row-gap: 0.25em;
   text-align: center;
 }
-
+.settings > * {
+  background-color: var(--color-fg);
+  border-radius: 5px;
+  padding: 0 0.5em;
+}
 input,
 select {
   background-color: var(--color-bg);

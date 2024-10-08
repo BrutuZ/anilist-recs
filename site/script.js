@@ -20,12 +20,17 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 const cacheBaseName = 'MangaRecs';
 const apiUrl = 'https://graphql.anilist.co';
 const table = document.querySelector('.content');
+const statusSelect = document.querySelector('#status');
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
+const statusMap = {
+  Ongoing: ['RELEASING', 'HIATUS'],
+  Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
+};
 let data = null,
   tagFilters = [],
   recs = [],
   ignore = [];
-deleteOldCaches(); // Clear expired cache (with extra steps)
+deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
   console.log('Fetching...');
@@ -74,7 +79,8 @@ function parseRecs(manga) {
       !rec ||
       ignore.includes(rec.id) ||
       rec.isAdult == document.querySelector('#adult').selectedIndex ||
-      (country.length > 0 && !country?.includes(rec.countryOfOrigin))
+      (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
+      (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
       // || e.rating < 1
     )
       return;
