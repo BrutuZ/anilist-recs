@@ -35,7 +35,7 @@ deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
   const userName = document.querySelector('#username').value.trim();
-  if (!userName) {
+  if (!userName && !DEV) {
     table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
     throw new Error('No username');
   }
