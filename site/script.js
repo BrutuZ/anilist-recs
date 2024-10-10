@@ -335,7 +335,7 @@ async function getData(url, options = {}, userName = null, simple = false) {
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
     document.querySelector('#cached > span').textContent =
-      `Cached for ${(Date.now() - Date.parse(cachedData.headers.date) + 10800000) / 60000}m`;
+      `Cached for ${Math.floor((localStorage.getItem('cacheExpiry') - Date.now()) / 60000)}m`;
     return cachedData;
   }
 
@@ -353,6 +353,7 @@ async function getData(url, options = {}, userName = null, simple = false) {
   cachedData = await getCachedData(cacheName, url);
   await deleteOldCaches(cacheName);
 
+  localStorage.setItem('cacheExpiry', Date.now() + 10800000);
   return cachedData;
 }
 
@@ -361,7 +362,7 @@ async function getCachedData(cacheName, url) {
   const cacheStorage = await caches.open(cacheName);
   const cachedResponse = await cacheStorage.match(url);
 
-  if (!cachedResponse || !cachedResponse.ok || expiredCache(cachedResponse.headers.date)) {
+  if (!cachedResponse || !cachedResponse.ok || expiredCache()) {
     await caches.delete(cacheName);
     return false;
   }
@@ -375,8 +376,7 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 
   for (const key of keys) {
     const isOurCache = key.startsWith(cacheBaseName);
-    const cachedResponse = await (await caches.open(key)).match(apiUrl);
-    if (cacheName === key || isOurCache || !expiredCache(cachedResponse.headers.date)) {
+    if (cacheName === key || isOurCache || !expiredCache()) {
       continue;
     }
     console.log(`Deleting ${key}`);
@@ -384,8 +384,8 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
   }
 }
 
-function expiredCache(time) {
-  return Date.now() > Date.parse(time) + 10800000; // Invalidate if cache is over 3h old
+function expiredCache() {
+  return Date.now() > localStorage.getItem('cacheExpiry'); // Invalidate if cache is over 3h old
 }
 
 function settingsRead() {
