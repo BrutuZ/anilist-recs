@@ -53,10 +53,11 @@ body {
   row-gap: 0.25em;
   text-align: center;
 }
-.settings > * {
+.settings > span {
   background-color: var(--color-fg);
   border-radius: 5px;
   padding: 0 0.5em;
+  width: fit-content;
 }
 input,
 select {
@@ -200,9 +201,12 @@ img {
 }
 
 /* PORTRAIT OVERRIDES */
-@media only screen and (orientation: portrait) {
-  .settings {
-    flex-direction: column;
+@media only screen and (max-width: 961px) {
+  .settings,
+  input,
+  select,
+  button {
+    font-size: 0.75rem;
   }
   .header {
     display: none;
