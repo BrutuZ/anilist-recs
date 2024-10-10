@@ -11,7 +11,7 @@ const build = await esbuild.context({
   dropLabels: productionMode ? ['DEV'] : [],
   minify: productionMode,
   sourcemap: !productionMode,
-  entryPoints: productionMode ? ['site/*'] : ['site/*', '*.json'],
+  entryPoints: productionMode ? ['site/*'] : ['site/*', 'manga*.json'],
   bundle: true,
   outbase: 'site',
   outdir: 'build',
