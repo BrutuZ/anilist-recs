@@ -336,6 +336,8 @@ async function getData(url, options = {}, userName = null, simple = false) {
   document.querySelector('#cached').hidden = !Boolean(cachedData);
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
+    document.querySelector('#cached > span').textContent =
+      `Cached for ${(Date.now() - Date.parse(cachedData.headers.date) + 10800000) / 60000}m`;
     return cachedData;
   }
 
