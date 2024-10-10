@@ -26,12 +26,6 @@ body {
   position: absolute;
 }
 
-#top-anchor {
-  height: 1px;
-  position: absolute;
-  top: 150vh;
-  width: 1px;
-}
 #top {
   align-items: center;
   bottom: 1rem;

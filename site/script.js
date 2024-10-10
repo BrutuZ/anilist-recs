@@ -281,7 +281,6 @@ async function parseData() {
   document
     .querySelectorAll('.tag')
     .forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
-  document.querySelector('#top-anchor').hidden = false;
   console.log('Parsed!');
 }
 
@@ -320,10 +319,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     .querySelector('#top')
     .addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
-  const observer = new IntersectionObserver(entries => {
-    document.querySelector('#top').hidden = !(entries[0].boundingClientRect.y < 0);
-  });
-  observer.observe(document.querySelector('#top-anchor'));
+  document.addEventListener(
+    'scroll',
+    () => (document.querySelector('#top').hidden = scrollY < visualViewport.height * 1.1)
+  );
 });
 
 // Try to get data from the cache, but fall back to fetching it live.
