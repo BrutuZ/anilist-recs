@@ -376,7 +376,7 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 
   for (const key of keys) {
     const isOurCache = key.startsWith(cacheBaseName);
-    if (cacheName === key || isOurCache || !expiredCache()) {
+    if (!expiredCache() && (cacheName === key || isOurCache)) {
       continue;
     }
     console.log(`Deleting ${key}`);
