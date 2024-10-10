@@ -29,17 +29,16 @@ const statusMap = {
 let data = null,
   tagFilters = [],
   recs = [],
-  ignore = [];
+  ignore = [],
+  settings = settingsRead();
 deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
-  const userName =
-    document.querySelector('#username').value.trim() || localStorage.getItem('userName');
+  const userName = document.querySelector('#username').value.trim();
   if (!userName) {
     table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
     throw new Error('No username');
   }
-  localStorage.setItem('userName', userName);
   console.log('Fetching...');
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
@@ -105,7 +104,7 @@ function parseRecs(manga) {
     } else {
       rec.recommended = [recObj];
       recs.push(rec);
-      if (rec.recommendations && document.querySelector('#subRecs').checked) {
+      if (rec.recommendations && settings.subRecs) {
         parseRecs(rec);
       }
     }
@@ -113,6 +112,7 @@ function parseRecs(manga) {
 }
 
 async function parseData() {
+  settings = settingsSave();
   if (ignore.length == 0) {
     console.log('Nothing to ignore!');
     table.innerHTML = '<h1>Stalking your profile<br />(⓿_⓿)</h1>';
@@ -125,7 +125,7 @@ async function parseData() {
     await fetchData();
   }
   console.log('Parsing...');
-  const englishTitles = document.querySelector('#englishTitles').checked;
+  const englishTitles = settings.englishTitles;
   const current = data.collection.statuses.find(s => s.status == 'CURRENT').list.map(e => e.manga);
   recs = [];
 
@@ -136,7 +136,7 @@ async function parseData() {
 
   recs
     .sort((a, b) => {
-      switch (document.querySelector('#sortMode').value) {
+      switch (settings.sortMode) {
         case 'default':
         default:
           return b - a;
@@ -259,7 +259,7 @@ async function parseData() {
       text.innerHTML = '';
       text.classList.add('tags');
       rec.tags
-        ?.filter(tag => (document.querySelector('#spoilers').checked ? !tag.isMediaSpoiler : true))
+        ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
         .map(tag => tag.name)
         .forEach(tag => {
           const container = document.createElement('div');
@@ -319,8 +319,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document
     .querySelector('#top')
     .addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
-
-  document.querySelector('#username').value = localStorage.getItem('userName');
 
   const observer = new IntersectionObserver(entries => {
     document.querySelector('#top').hidden = !(entries[0].boundingClientRect.y < 0);
@@ -388,4 +386,24 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 
 function expiredCache(time) {
   return Date.now() > Date.parse(time) + 10800000; // Invalidate if cache is over 3h old
+}
+
+function settingsRead() {
+  const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+  Object.entries(settings).forEach(setting => {
+    const el = document.getElementById(setting[0]);
+    if (el.type == 'checkbox') el.checked = setting[1];
+    else el.value = setting[1];
+  });
+  return settings;
+}
+function settingsSave() {
+  const settings = {};
+  const elements = document.querySelectorAll('.settings input, .settings select');
+  elements.forEach(el => {
+    if (el.type == 'checkbox') settings[el.id] = el.checked;
+    else settings[el.id] = el.value;
+  });
+  localStorage.setItem('settings', JSON.stringify(settings));
+  return settings;
 }
