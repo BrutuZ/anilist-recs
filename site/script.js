@@ -334,8 +334,12 @@ async function getData(url, options = {}, userName = null, simple = false) {
   document.querySelector('#cached').hidden = !Boolean(cachedData);
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
-    document.querySelector('#cached > span').textContent =
-      `Cached for ${Math.floor((localStorage.getItem('cacheExpiry') - Date.now()) / 60000)}m`;
+    const cacheCountdown = new Date(localStorage.getItem('cacheExpiry') - Date.now())
+      .toISOString()
+      .slice(11, 16)
+      .replace('00:', '')
+      .replace(':', 'h ');
+    document.querySelector('#cached > span').textContent = `Cached for ${cacheCountdown}m`;
     return cachedData;
   }
 
