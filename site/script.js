@@ -339,7 +339,7 @@ async function getData(url, options = {}, userName = null, simple = false) {
       .slice(11, 16)
       .replace('00:', '')
       .replace(':', 'h ');
-    document.querySelector('#cached > p').textContent = `Cached for ${cacheCountdown}m`;
+    document.querySelector('#cached > p').textContent = `${cacheCountdown}m`;
     return cachedData;
   }
 
