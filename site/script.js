@@ -34,8 +34,7 @@ let data = null,
 deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
-  const userName = document.querySelector('#username').value.trim();
-  if (!userName && !DEV) {
+  if (!settings.username && !DEV) {
     table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
     throw new Error('No username');
   }
@@ -58,10 +57,10 @@ async function fetchData(simple = false) {
           },
           body: JSON.stringify({
             query: simple ? simpleQuery : recsQuery,
-            variables: { user: userName },
+            variables: { user: settings.username },
           }),
         },
-        userName,
+        settings.username,
         simple
       );
   if (simple) {
@@ -333,7 +332,9 @@ async function getData(url, options = {}, userName = null, simple = false) {
   document.querySelector('#cached').hidden = !Boolean(cachedData);
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
-    const cacheCountdown = new Date(localStorage.getItem('cacheExpiry') - Date.now())
+    const cacheCountdown = new Date(
+      (localStorage.getItem('cacheExpiry') || Date.now()) - Date.now()
+    )
       .toISOString()
       .slice(11, 16)
       .replace('00:', '')
@@ -388,7 +389,7 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 }
 
 function expiredCache() {
-  return Date.now() > localStorage.getItem('cacheExpiry'); // Invalidate if cache is over 3h old
+  return Date.now() > (localStorage.getItem('cacheExpiry') || Date.now()); // Invalidate if cache is over 3h old
 }
 
 function settingsRead() {
@@ -398,6 +399,7 @@ function settingsRead() {
     if (el.type == 'checkbox') el.checked = setting[1];
     else el.value = setting[1];
   });
+  console.log('Read settings:', settings);
   return settings;
 }
 function settingsSave() {
@@ -407,6 +409,7 @@ function settingsSave() {
     if (el.type == 'checkbox') settings[el.id] = el.checked;
     else settings[el.id] = el.value;
   });
+  console.log('Saving settings:', settings);
   localStorage.setItem('settings', JSON.stringify(settings));
   return settings;
 }
