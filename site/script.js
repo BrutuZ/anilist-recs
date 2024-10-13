@@ -26,7 +26,7 @@ const statusMap = {
   Ongoing: ['RELEASING', 'HIATUS'],
   Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
 };
-let data = null,
+var data = null,
   tagFilters = [],
   recs = [],
   ignore = [],
