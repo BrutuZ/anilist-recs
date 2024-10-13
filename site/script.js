@@ -168,7 +168,7 @@ async function parseData() {
       const img = document.createElement('img');
 
       entry.classList.add('entry');
-      entry.id = rec.id;
+      entry.id = `id-${rec.id}`;
 
       // COVER + URL
       link.target = '_blank';
