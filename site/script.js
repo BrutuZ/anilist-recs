@@ -180,7 +180,7 @@ async function parseData() {
 
       link.appendChild(img.cloneNode(true));
 
-      text.textContent = `${rec.status.charAt(0)}${rec.status.substr(1).toLowerCase()} 💙${rec.meanScore}%`;
+      text.textContent = `${rec.status.charAt(0)}${rec.status.substr(1).toLowerCase()} ${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
       link.appendChild(text.cloneNode(true));
 
       cell.appendChild(link.cloneNode(true));
