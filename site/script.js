@@ -115,7 +115,12 @@ async function parseData() {
   if (ignore.length == 0) {
     console.log('Nothing to ignore!');
     table.innerHTML = '<h1>Stalking your profile<br />(⓿_⓿)</h1>';
-    await fetchData(true);
+    try {
+      await fetchData(true);
+    } catch {
+      table.innerHTML = '<h1>Unexpected error, please try again<br />o((>ω< ))o</h1>';
+      return;
+    }
   }
   if (!data) {
     console.log('Nothing to parse!');
@@ -389,7 +394,7 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 }
 
 function expiredCache() {
-  return Date.now() > (localStorage.getItem('cacheExpiry') || Date.now()); // Invalidate if cache is over 3h old
+  return Date.now() > (localStorage.getItem('cacheExpiry') || 1); // Invalidate if cache is over 3h old
 }
 
 function settingsRead() {
