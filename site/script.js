@@ -26,7 +26,8 @@ const statusMap = {
   Ongoing: ['RELEASING', 'HIATUS'],
   Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
 };
-var data = null,
+export var data = null,
+  // lastEntry = undefined,
   tagFilters = [],
   recs = [],
   ignore = [],

@@ -15,6 +15,8 @@ const build = await esbuild.context({
   bundle: true,
   outbase: 'site',
   outdir: 'build',
+  format: 'iife',
+  globalName: 'script',
   loader: {
     '.html': 'copy',
     '.ico': 'copy',
@@ -25,6 +27,7 @@ const build = await esbuild.context({
     '.webmanifest': 'copy',
     '.xml': 'copy',
   },
+  platform: 'browser',
 });
 
 if (productionMode) {
