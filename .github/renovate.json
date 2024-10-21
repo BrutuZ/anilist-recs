@@ -3,17 +3,18 @@
   "extends": [
     "config:recommended",
     ":disableDependencyDashboard",
+    "group:all",
     "schedule:earlyMondays",
     "schedule:automergeEarlyMondays"
   ],
   "dependencyDashboardAutoclose": true,
   "labels": ["Dependency"],
-  "minimumReleaseAge": "1 week",
-  "automergeType": "branch",
   "packageRules": [
     {
+      "automerge": true,
+      "automergeType": "branch",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "automerge": true
+      "minimumReleaseAge": "1 week"
     }
   ]
 }
