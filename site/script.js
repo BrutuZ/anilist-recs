@@ -333,6 +333,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Try to get data from the cache, but fall back to fetching it live.
 async function getData(url, options = {}, userName = null, simple = false) {
   const cacheName = `${cacheBaseName}-${userName}-${simple ? 'onList' : 'recs'}`;
+  await deleteOldCaches(cacheName);
   let cachedData = await getCachedData(cacheName, url);
 
   document.querySelector('#cached').hidden = !Boolean(cachedData);
@@ -361,7 +362,6 @@ async function getData(url, options = {}, userName = null, simple = false) {
   });
 
   cachedData = await getCachedData(cacheName, url);
-  await deleteOldCaches(cacheName);
 
   localStorage.setItem('cacheExpiry', Date.now() + 10800000);
   return cachedData;
