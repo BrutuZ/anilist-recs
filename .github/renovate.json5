@@ -2,10 +2,10 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    ":disableDependencyDashboard",
+    // ":disableDependencyDashboard",
     "group:all",
     "schedule:earlyMondays",
-    "schedule:automergeEarlyMondays"
+    "schedule:automergeEarlyMondays",
   ],
   "dependencyDashboardAutoclose": true,
   "labels": ["Dependency"],
@@ -14,7 +14,7 @@
       "automerge": true,
       "automergeType": "branch",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "minimumReleaseAge": "1 week"
+      "minimumReleaseAge": "1 week",
     }
   ]
 }
