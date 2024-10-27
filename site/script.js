@@ -82,10 +82,12 @@ function parseRecs(manga) {
   }
   manga.recommendations.entries.forEach(entry => {
     const rec = entry.mediaRecommendation;
+    // APPLY FILTERS
     if (
       !rec ||
       ignore.includes(rec.id) ||
       rec.isAdult == document.querySelector('#adult').selectedIndex ||
+      rec.score >= document.querySelector('#minScore').value ||
       (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
       (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
       // || e.rating < 1
