@@ -41,7 +41,7 @@ async function fetchData(simple = false) {
   }
   console.log('Fetching...');
   const recsSubQuery =
-    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description countryOfOrigin isAdult';
+    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description chapters countryOfOrigin isAdult';
   const simpleQuery =
     'query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true sort: UPDATED_TIME_DESC){statuses: lists{status list: entries {manga: media {id}}}}}';
   const recsQuery = `query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true status_in: CURRENT sort: UPDATED_TIME_DESC){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
@@ -188,7 +188,7 @@ async function parseData() {
 
       link.appendChild(img.cloneNode(true));
 
-      text.textContent = `${rec.status.charAt(0)}${rec.status.substr(1).toLowerCase()} ${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
+      text.textContent = `${rec.status.charAt(0)}${rec.status.substr(1).toLowerCase()} ${rec.chapters ? `[${rec.chapters}] ` : ''}${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
       link.appendChild(text.cloneNode(true));
 
       cell.appendChild(link.cloneNode(true));
