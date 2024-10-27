@@ -36,8 +36,11 @@ deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
   if (!settings.username && !DEV) {
-    table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
-    throw new Error('No username');
+    if (!document.querySelector('#username')?.value) {
+      table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
+      throw new Error('No username');
+    }
+    settingsSave();
   }
   console.log('Fetching...');
   const recsSubQuery =
