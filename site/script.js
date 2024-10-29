@@ -90,7 +90,7 @@ function parseRecs(manga) {
       !rec ||
       ignore.includes(rec.id) ||
       rec.isAdult == document.querySelector('#adult').selectedIndex ||
-      rec.score >= document.querySelector('#minScore').value ||
+      rec.score < document.querySelector('#minScore').value ||
       (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
       (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
       // || e.rating < 1
