@@ -4,11 +4,13 @@
     "config:recommended",
     // ":disableDependencyDashboard",
     "group:all",
-    "schedule:earlyMondays",
+    // "schedule:earlyMondays",
     "schedule:automergeEarlyMondays",
   ],
   "dependencyDashboardAutoclose": true,
   "labels": ["Dependency"],
+  "automerge": true,
+  "automergeType": "branch",
   "packageRules": [
     {
       "automerge": true,
