@@ -2,21 +2,15 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    // ":disableDependencyDashboard",
     "group:all",
-    // "schedule:earlyMondays",
+    ":automergeBranch",
+    ":automergeMinor",
+    ":automergeDigest",
+    "schedule:weekends",
     "schedule:automergeEarlyMondays",
+    // ":disableDependencyDashboard",
   ],
   "dependencyDashboardAutoclose": true,
   "labels": ["Dependency"],
-  "automerge": true,
-  "automergeType": "branch",
-  "packageRules": [
-    {
-      "automerge": true,
-      "automergeType": "branch",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "minimumReleaseAge": "1 week",
-    }
-  ]
+  "minimumReleaseAge": "1 week",
 }

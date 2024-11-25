@@ -327,6 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelector('#filters').addEventListener('click', async () => await parseData());
   DEV: await parseData();
 
+  // Back to Top button
   document
     .querySelector('#top')
     .addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
@@ -416,7 +417,7 @@ function settingsRead() {
   return settings;
 }
 function settingsSave() {
-  const settings = {};
+  const settings = settingsRead();
   const elements = document.querySelectorAll('.settings input, .settings select');
   elements.forEach(el => {
     if (el.type == 'checkbox') settings[el.id] = el.checked;
