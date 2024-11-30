@@ -31,7 +31,7 @@ export var data = null,
   tagFilters = [],
   recs = [],
   ignore = [],
-  settings = settingsRead();
+  settings = settingsLoad();
 deleteOldCaches(); // Clear expired cache
 
 async function fetchData(simple = false) {
@@ -406,7 +406,7 @@ function expiredCache() {
   return Date.now() > (localStorage.getItem('cacheExpiry') || 1); // Invalidate if cache is over 3h old
 }
 
-function settingsRead() {
+function settingsLoad() {
   const settings = JSON.parse(localStorage.getItem('settings') || '{}');
   Object.entries(settings).forEach(setting => {
     const el = document.getElementById(setting[0]);
@@ -417,7 +417,7 @@ function settingsRead() {
   return settings;
 }
 function settingsSave() {
-  const settings = settingsRead();
+  const settings = {};
   const elements = document.querySelectorAll('.settings input, .settings select');
   elements.forEach(el => {
     if (el.type == 'checkbox') settings[el.id] = el.checked;
