@@ -83,8 +83,8 @@ async function fetchData(onList = false) {
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description chapters countryOfOrigin isAdult';
   const simpleQuery = `${queryStart}){statuses: lists{status list: entries {manga: media {id}}}}}`;
   const recsQuery = `${queryStart} status_in: CURRENT){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
-  const json = DEV
-    ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(response => response.json())
+  const response = DEV
+    ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(body => body.json())
     : await getData(
         apiUrl,
         {
@@ -102,12 +102,12 @@ async function fetchData(onList = false) {
         onList
       );
   if (onList) {
-    ignore = json.data.collection.statuses
+    ignore = response.data.collection.statuses
       .flatMap(statuses => statuses.list)
       .map(entry => entry.manga.id);
     console.log('Ignored entries:', ignore);
   } else {
-    data = json.data;
+    data = response.data;
     console.log('Reading entries', data);
   }
 }
@@ -155,7 +155,7 @@ async function parseData() {
   if (ignore.length == 0) {
     console.log('Nothing to ignore!');
     message('Stalking your profile', '(⓿_⓿)');
-    await fetchData(true);
+    await fetchData(true).catch(() => message('Unexpected error, please try again', 'o((>ω< ))o'));
     if (ignore.length === 0) return;
   }
   if (!data) {
@@ -394,17 +394,16 @@ async function getData(url, options = {}, userName = null, onList = false) {
 
   const cacheStorage = await caches.open(cacheName);
   if (jwt) options.headers['Authorization'] = `Bearer ${jwt}`;
-  await fetch(url, options).then(response => {
+  cachedData = await fetch(url, options).then(response => {
     if (!response.ok) {
       message('Request failed!', response.status, response.statusText);
       return false;
     }
-    return cacheStorage.put(url, response);
+    cacheStorage
+      .put(url, response.clone())
+      .then(() => localStorage.setItem('cacheExpiry', Date.now() + 10800000));
+    return response;
   });
-
-  cachedData = await getCachedData(cacheName, url);
-
-  localStorage.setItem('cacheExpiry', Date.now() + 10800000);
   return cachedData;
 }
 
