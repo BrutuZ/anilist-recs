@@ -1,3 +1,5 @@
+import { decodeJwt } from 'jose';
+
 DEV: new EventSource('/esbuild').addEventListener('change', e => {
   const { added, removed, updated } = JSON.parse(e.data);
 
@@ -17,39 +19,72 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
+const qe = document.querySelector.bind(document);
+const qa = document.querySelectorAll.bind(document);
 const cacheBaseName = 'MangaRecs';
 const apiUrl = 'https://graphql.anilist.co';
-const table = document.querySelector('.content');
-const statusSelect = document.querySelector('#status');
+const table = qe('.content');
+const statusSelect = qe('#status');
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
 const statusMap = {
   Ongoing: ['RELEASING', 'HIATUS'],
   Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
 };
+var settings = settingsLoad(),
+  jwt = localStorage.getItem('jwt');
 export var data = null,
   // lastEntry = undefined,
   tagFilters = [],
   recs = [],
-  ignore = [],
-  settings = settingsLoad();
+  ignore = [];
 deleteOldCaches(); // Clear expired cache
 
-async function fetchData(simple = false) {
-  if (!settings.username && !DEV) {
-    if (!document.querySelector('#username')?.value) {
-      table.innerHTML = '<h1>╰(￣ω￣ｏ)<br />Fill your username</h1>';
-      throw new Error('No username');
+// --- AUTHENTICATION ---
+// Check if authentication is saved and clear if expired
+if (jwt && Number(decodeJwt(jwt).exp) * 1000 < Date.now()) jwt = null;
+// Save authentication from AniList redirect and clear the URL afterwards
+if (!jwt && location.hash.search('access_token') !== -1) {
+  const url = new URL(location);
+  url.search = url.hash.slice(1);
+  url.hash = '';
+  jwt = url.searchParams.get('access_token');
+  localStorage.setItem('jwt', jwt);
+  ['access_token', 'token_type', 'expires_in'].forEach(param => url.searchParams.delete(param));
+  history.replaceState(null, '', url.toString());
+  message('Authenticated with AniList', '(⌐■_■)');
+}
+
+function validateUser() {
+  if (!DEV) {
+    if (settings.private || qe('#private').checked) {
+      if (jwt) return `userId: ${decodeJwt(jwt).sub}`;
+      else {
+        message(
+          '<a href="https://anilist.co/api/v2/oauth/authorize?client_id=9655&response_type=token">Authenticate with AniList</a>',
+          'to see Private Profile / Entries'
+        );
+        throw new Error('Unauthenticated');
+      }
+    } else {
+      if (!settings.username || !qe('#username').value) {
+        message('╰(￣ω￣ｏ)', 'Fill your username');
+        throw new Error('No username');
+      } else return `userName: "${settings.username || qe('#username').value}"`;
     }
-    settingsSave();
-  }
+  } else return '';
+}
+
+async function fetchData(onList = false) {
+  settingsSave();
   console.log('Fetching...');
+  const user = validateUser();
+  const queryStart = `{collection: MediaListCollection(${user} type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description chapters countryOfOrigin isAdult';
-  const simpleQuery =
-    'query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true sort: UPDATED_TIME_DESC){statuses: lists{status list: entries {manga: media {id}}}}}';
-  const recsQuery = `query ($user: String){collection: MediaListCollection(userName: $user type: MANGA perChunk: 500 chunk: 1 forceSingleCompletedList: true status_in: CURRENT sort: UPDATED_TIME_DESC){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
+  const simpleQuery = `${queryStart}){statuses: lists{status list: entries {manga: media {id}}}}}`;
+  const recsQuery = `${queryStart} status_in: CURRENT){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
   const json = DEV
-    ? await fetch(`_.._/manga${simple ? 'list' : 'recs'}.json`).then(response => response.json())
+    ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(response => response.json())
     : await getData(
         apiUrl,
         {
@@ -60,14 +95,13 @@ async function fetchData(simple = false) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: simple ? simpleQuery : recsQuery,
-            variables: { user: settings.username },
+            query: onList ? simpleQuery : recsQuery,
           }),
         },
-        settings.username,
-        simple
+        jwt ? 'auth' : settings.username,
+        onList
       );
-  if (simple) {
+  if (onList) {
     ignore = json.data.collection.statuses
       .flatMap(statuses => statuses.list)
       .map(entry => entry.manga.id);
@@ -80,7 +114,7 @@ async function fetchData(simple = false) {
 
 function parseRecs(manga) {
   const country = [];
-  for (const option of document.querySelectorAll('#country > input')) {
+  for (const option of qa('#country > input')) {
     if (option.checked) country.push(option.id);
   }
   manga.recommendations.entries.forEach(entry => {
@@ -89,8 +123,8 @@ function parseRecs(manga) {
     if (
       !rec ||
       ignore.includes(rec.id) ||
-      rec.isAdult == document.querySelector('#adult').selectedIndex ||
-      rec.meanScore < document.querySelector('#minScore').value ||
+      rec.isAdult == qe('#adult').selectedIndex ||
+      rec.meanScore < qe('#minScore').value ||
       (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
       (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
       // || e.rating < 1
@@ -120,18 +154,13 @@ async function parseData() {
   settings = settingsSave();
   if (ignore.length == 0) {
     console.log('Nothing to ignore!');
-    table.innerHTML = '<h1>Stalking your profile<br />(⓿_⓿)</h1>';
-    try {
-      await fetchData(true);
-    } catch {
-      table.innerHTML = '<h1>Unexpected error, please try again<br />o((>ω< ))o</h1>';
-      return;
-    }
+    message('Stalking your profile', '(⓿_⓿)');
+    await fetchData(true);
+    if (ignore.length === 0) return;
   }
   if (!data) {
     console.log('Nothing to parse!');
-    table.innerHTML =
-      '<h1>Digging Recommentations...<br />(This may take a while)<br />(∪.∪ )...zzz</h1>';
+    message('Digging Recommentations...', '(This may take a while)', '(∪.∪ )...zzz');
     await fetchData();
   }
   console.log('Parsing...');
@@ -142,7 +171,7 @@ async function parseData() {
   console.log('Currents...');
   current.forEach(manga => parseRecs(manga));
   console.log('Currents DONE');
-  table.innerHTML = '';
+  message();
 
   recs
     .sort((a, b) => {
@@ -193,7 +222,10 @@ async function parseData() {
 
       link.appendChild(img.cloneNode(true));
 
-      text.textContent = `${rec.status.charAt(0)}${rec.status.substr(1).toLowerCase()} ${rec.chapters ? `[${rec.chapters}] ` : ''}${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
+      rec.status = rec.status
+        ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase()
+        : 'Unknown Status';
+      text.textContent = `${rec.status} ${rec.chapters ? `[${rec.chapters}] ` : ''}${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
       link.appendChild(text.cloneNode(true));
 
       cell.appendChild(link.cloneNode(true));
@@ -290,9 +322,7 @@ async function parseData() {
 
       table.appendChild(entry.cloneNode(true));
     });
-  document
-    .querySelectorAll('.tag')
-    .forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
+  qa('.tag').forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
   console.log('Parsed!');
 }
 
@@ -302,7 +332,7 @@ function filterTag(ev) {
   if (tagFilters.includes(tagName)) tagFilters.splice(tagFilters.indexOf(tagName), 1);
   else tagFilters.push(tagName);
 
-  document.querySelectorAll('.content > .entry').forEach(entry => {
+  qa('.content > .entry').forEach(entry => {
     if (tagFilters.length == 0) {
       entry.hidden = false;
       return;
@@ -318,33 +348,35 @@ function filterTag(ev) {
 
 document.addEventListener('DOMContentLoaded', async () => {
   // Call API from login form
-  document.querySelector('#login').addEventListener('submit', async event => {
+  qe('#login').addEventListener('submit', async event => {
     event.preventDefault();
     await parseData();
   });
 
+  qe('#private').addEventListener('change', e => {
+    qe('#username').disabled = e.target.checked;
+    qe('#username').hidden = false;
+  });
   // Refilter on settings change
-  document.querySelector('#filters').addEventListener('click', async () => await parseData());
+  qe('#filters').addEventListener('click', async () => await parseData());
   DEV: await parseData();
 
   // Back to Top button
-  document
-    .querySelector('#top')
-    .addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+  qe('#top').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
   document.addEventListener(
     'scroll',
-    () => (document.querySelector('#top').hidden = scrollY < visualViewport.height * 1.1)
+    () => (qe('#top').hidden = scrollY < visualViewport.height * 1.1)
   );
 });
 
 // Try to get data from the cache, but fall back to fetching it live.
-async function getData(url, options = {}, userName = null, simple = false) {
-  const cacheName = `${cacheBaseName}-${userName}-${simple ? 'onList' : 'recs'}`;
+async function getData(url, options = {}, userName = null, onList = false) {
+  const cacheName = `${cacheBaseName}-${userName}-${onList ? 'onList' : 'recs'}`;
   await deleteOldCaches(cacheName);
   let cachedData = await getCachedData(cacheName, url);
 
-  document.querySelector('#cached').hidden = !Boolean(cachedData);
+  qe('#cached').hidden = !Boolean(cachedData);
   if (cachedData) {
     console.log('Retrieved cached data:', cacheName);
     const cacheCountdown = new Date(
@@ -354,16 +386,17 @@ async function getData(url, options = {}, userName = null, simple = false) {
       .slice(11, 16)
       .replace('00:', '')
       .replace(':', 'h ');
-    document.querySelector('#cached > p').textContent = `${cacheCountdown}m`;
+    qe('#cached > p').textContent = `${cacheCountdown}m`;
     return cachedData;
   }
 
   console.log('Fetching fresh data:', cacheName);
 
   const cacheStorage = await caches.open(cacheName);
+  if (jwt) options.headers['Authorization'] = `Bearer ${jwt}`;
   await fetch(url, options).then(response => {
     if (!response.ok) {
-      table.innerHTML = `<h1>Request failed!<br />${response.status} ${response.statusText}</h1>`;
+      message('Request failed!', response.status, response.statusText);
       return false;
     }
     return cacheStorage.put(url, response);
@@ -413,12 +446,13 @@ function settingsLoad() {
     if (el.type == 'checkbox') el.checked = setting[1];
     else el.value = setting[1];
   });
+  qe('#username').hidden = qe('#username').disabled = qe('#private').checked;
   console.log('Read settings:', settings);
   return settings;
 }
 function settingsSave() {
   const settings = {};
-  const elements = document.querySelectorAll('.settings input, .settings select');
+  const elements = qa('.settings input, .settings select');
   elements.forEach(el => {
     if (el.type == 'checkbox') settings[el.id] = el.checked;
     else settings[el.id] = el.value;
@@ -426,4 +460,8 @@ function settingsSave() {
   console.log('Saving settings:', settings);
   localStorage.setItem('settings', JSON.stringify(settings));
   return settings;
+}
+
+function message() {
+  table.innerHTML = arguments.length ? `<h1>${Array.from(arguments).join('<br />')}</h1>` : '';
 }
