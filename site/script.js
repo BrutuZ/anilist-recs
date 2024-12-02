@@ -49,7 +49,7 @@ if (!jwt && location.hash.search('access_token') !== -1) {
   url.hash = '';
   jwt = url.searchParams.get('access_token');
   localStorage.setItem('jwt', jwt);
-  ['access_token', 'token_type', 'expires_in'].forEach(param => url.searchParams.delete(param));
+  url.search = '';
   history.replaceState(null, '', url.toString());
   message('Authenticated with AniList', '(⌐■_■)');
 }
@@ -98,7 +98,7 @@ async function fetchData(onList = false) {
             query: onList ? simpleQuery : recsQuery,
           }),
         },
-        jwt ? 'auth' : settings.username,
+        settings.private ? 'auth' : settings.username,
         onList
       );
   if (onList) {
