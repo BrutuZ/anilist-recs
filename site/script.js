@@ -203,127 +203,7 @@ async function parseData() {
           );
       }
     })
-    .forEach(rec => {
-      const entry = document.createElement('div');
-      const cell = document.createElement('div');
-      const text = document.createElement('p');
-
-      const link = document.createElement('a');
-      const img = document.createElement('img');
-
-      entry.classList.add('entry');
-      entry.id = `id-${rec.id}`;
-
-      // COVER + URL
-      link.target = '_blank';
-      link.href = rec.url;
-
-      img.width = 250;
-      img.loading = 'lazy';
-      img.src = rec.cover.large;
-
-      link.appendChild(img.cloneNode(true));
-
-      rec.status = rec.status
-        ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase()
-        : 'Unknown Status';
-      text.textContent = `${rec.status} ${rec.chapters ? `[${rec.chapters}] ` : ''}${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
-      link.appendChild(text.cloneNode(true));
-
-      cell.appendChild(link.cloneNode(true));
-      cell.classList.add('cover');
-      entry.appendChild(cell.cloneNode(true));
-      cell.removeAttribute('class');
-
-      // CONNECTIONS
-      cell.innerHTML = '';
-      cell.classList.add('recs');
-      img.width = 75;
-      rec.recommended.forEach(origin => {
-        link.innerHTML = '';
-        link.target = '_blank';
-        link.href = origin.url;
-        img.src = origin.cover;
-        img.title = origin.title;
-        img.alt = origin.title;
-        link.appendChild(img.cloneNode(true));
-        cell.appendChild(link.cloneNode(true));
-      });
-      entry.appendChild(cell.cloneNode(true));
-      cell.removeAttribute('class');
-
-      // TITLE (PORTRAIT)
-      cell.innerHTML = '';
-      const textContainer = document.createElement('div');
-      const header = document.createElement('h3');
-      const title = englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
-      header.textContent = `${rec.isAdult ? '🔞' : ''}${flags[rec.countryOfOrigin]} ${title}`;
-      if (englishTitles && rec.title.english) header.classList.add('licensed');
-      textContainer.appendChild(header);
-      cell.appendChild(textContainer.cloneNode(true));
-
-      cell.classList.add('title');
-      entry.appendChild(cell.cloneNode(true));
-      cell.removeAttribute('class');
-
-      // ALT. TITLES (PORTRAIT)
-      cell.innerHTML = '';
-      textContainer.innerHTML = '';
-      const altTitles = [
-        ...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native]),
-      ]
-        .filter(i => (i && i != title ? i : false))
-        .join('\n• ');
-      if (altTitles) {
-        text.innerText = `• ${altTitles}`;
-        textContainer.appendChild(text.cloneNode(true));
-      }
-      cell.appendChild(textContainer.cloneNode(true));
-
-      cell.classList.add('alt-titles');
-      entry.appendChild(cell.cloneNode(true));
-      cell.removeAttribute('class');
-
-      // TITLES FOR LANDSCAPE
-      cell.innerHTML = '';
-      textContainer.innerHTML = '';
-      entry
-        .querySelectorAll('.title h3, .alt-titles p')
-        .forEach(node => textContainer.appendChild(node.cloneNode(true)));
-      cell.appendChild(textContainer.cloneNode(true));
-
-      cell.classList.add('titles');
-      entry.appendChild(cell.cloneNode(true));
-      cell.removeAttribute('class');
-
-      // DESCRIPTION
-      cell.innerHTML = '';
-      textContainer.innerHTML = '';
-      text.innerHTML = rec.description || '<i>&lt;Empty Description&gt;</i>';
-      textContainer.appendChild(text.cloneNode(true));
-
-      text.innerHTML = '';
-      text.classList.add('tags');
-      rec.tags
-        ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
-        .map(tag => tag.name)
-        .forEach(tag => {
-          const container = document.createElement('div');
-          container.append(tag);
-          container.className = 'tag';
-          container.dataset.tag = tag;
-          text.appendChild(container);
-        });
-      if (text.innerHTML) textContainer.appendChild(text.cloneNode(true));
-      text.removeAttribute('class');
-
-      cell.appendChild(textContainer.cloneNode(true));
-      cell.classList.add('details');
-      entry.appendChild(cell.cloneNode(true));
-      cell.removeAttribute('class');
-
-      table.appendChild(entry.cloneNode(true));
-    });
+    .forEach(drawRec);
   qa('.tag').forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
   console.log('Parsed!');
 }
@@ -348,6 +228,127 @@ function filterTag(ev) {
   });
 }
 
+function drawRec(rec) {
+  const entry = document.createElement('div');
+  const cell = document.createElement('div');
+  const text = document.createElement('p');
+
+  const link = document.createElement('a');
+  const img = document.createElement('img');
+
+  entry.classList.add('entry');
+  entry.id = `id-${rec.id}`;
+
+  // COVER + URL
+  link.target = '_blank';
+  link.href = rec.url;
+
+  img.width = 250;
+  img.loading = 'lazy';
+  img.src = rec.cover.large;
+
+  link.appendChild(img.cloneNode(true));
+
+  rec.status = rec.status
+    ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase()
+    : 'Unknown Status';
+  text.textContent = `${rec.status} ${rec.chapters ? `[${rec.chapters}] ` : ''}${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
+  link.appendChild(text.cloneNode(true));
+
+  cell.appendChild(link.cloneNode(true));
+  cell.classList.add('cover');
+  entry.appendChild(cell.cloneNode(true));
+  cell.removeAttribute('class');
+
+  // CONNECTIONS
+  cell.innerHTML = '';
+  cell.classList.add('recs');
+  img.width = 75;
+  rec.recommended.forEach(origin => {
+    link.innerHTML = '';
+    link.target = '_blank';
+    link.href = origin.url;
+    img.src = origin.cover;
+    img.title = origin.title;
+    img.alt = origin.title;
+    link.appendChild(img.cloneNode(true));
+    cell.appendChild(link.cloneNode(true));
+  });
+  entry.appendChild(cell.cloneNode(true));
+  cell.removeAttribute('class');
+
+  // TITLE (PORTRAIT)
+  cell.innerHTML = '';
+  const textContainer = document.createElement('div');
+  const header = document.createElement('h3');
+  const title = englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
+  header.textContent = `${rec.isAdult ? '🔞' : ''}${flags[rec.countryOfOrigin]} ${title}`;
+  if (englishTitles && rec.title.english) header.classList.add('licensed');
+  textContainer.appendChild(header);
+  cell.appendChild(textContainer.cloneNode(true));
+
+  cell.classList.add('title');
+  entry.appendChild(cell.cloneNode(true));
+  cell.removeAttribute('class');
+
+  // ALT. TITLES (PORTRAIT)
+  cell.innerHTML = '';
+  textContainer.innerHTML = '';
+  const altTitles = [
+    ...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native]),
+  ]
+    .filter(i => (i && i != title ? i : false))
+    .join('\n• ');
+  if (altTitles) {
+    text.innerText = `• ${altTitles}`;
+    textContainer.appendChild(text.cloneNode(true));
+  }
+  cell.appendChild(textContainer.cloneNode(true));
+
+  cell.classList.add('alt-titles');
+  entry.appendChild(cell.cloneNode(true));
+  cell.removeAttribute('class');
+
+  // TITLES FOR LANDSCAPE
+  cell.innerHTML = '';
+  textContainer.innerHTML = '';
+  entry
+    .querySelectorAll('.title h3, .alt-titles p')
+    .forEach(node => textContainer.appendChild(node.cloneNode(true)));
+  cell.appendChild(textContainer.cloneNode(true));
+
+  cell.classList.add('titles');
+  entry.appendChild(cell.cloneNode(true));
+  cell.removeAttribute('class');
+
+  // DESCRIPTION
+  cell.innerHTML = '';
+  textContainer.innerHTML = '';
+  text.innerHTML = rec.description || '<i>&lt;Empty Description&gt;</i>';
+  textContainer.appendChild(text.cloneNode(true));
+
+  text.innerHTML = '';
+  text.classList.add('tags');
+  rec.tags
+    ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
+    .map(tag => tag.name)
+    .forEach(tag => {
+      const container = document.createElement('div');
+      container.append(tag);
+      container.className = 'tag';
+      container.dataset.tag = tag;
+      text.appendChild(container);
+    });
+  if (text.innerHTML) textContainer.appendChild(text.cloneNode(true));
+  text.removeAttribute('class');
+
+  cell.appendChild(textContainer.cloneNode(true));
+  cell.classList.add('details');
+  entry.appendChild(cell.cloneNode(true));
+  cell.removeAttribute('class');
+
+  table.appendChild(entry.cloneNode(true));
+}
 document.addEventListener('DOMContentLoaded', async () => {
   // Call API from login form
   qe('#login').addEventListener('submit', async event => {
@@ -361,7 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   // Refilter on settings change
   qe('#filters').addEventListener('click', async () => await parseData());
-  // DEV: await parseData();
+  DEV: await parseData();
 
   // Back to Top button
   qe('#top').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
