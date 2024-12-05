@@ -99,12 +99,28 @@ button {
   /* row-gap: 3px; */
   margin-bottom: 1em;
   padding: 4px;
+  position: relative;
 }
 .entry > div {
   padding: 1.5px 0.5em;
 }
 .entry:nth-child(even of :not([hidden])) {
   background-color: var(--color-fg);
+}
+
+.ignore {
+  align-items: center;
+  background-color: var(--color-tag-text);
+  border-radius: 100%;
+  cursor: pointer;
+  font-weight: bolder;
+  height: 1.5em;
+  justify-content: center;
+  line-height: 1.5rem;
+  position: absolute;
+  right: 1em;
+  top: 1em;
+  width: 1.5em;
 }
 
 /* COVER AND RECOMMENDATIONS */

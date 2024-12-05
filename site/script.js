@@ -22,7 +22,7 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 const qe = document.querySelector.bind(document);
 const qa = document.querySelectorAll.bind(document);
 const cacheBaseName = 'MangaRecs';
-const apiUrl = 'https://graphql.anilist.co';
+const apiUrl = new URL('https://graphql.anilist.co');
 const table = qe('.content');
 const statusSelect = qe('#status');
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
@@ -31,7 +31,8 @@ const statusMap = {
   Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
 };
 var settings = settingsLoad(),
-  jwt = localStorage.getItem('jwt');
+  jwt = localStorage.getItem('jwt'),
+  userIgnored = localStorage.getItem('ignored')?.split(',')?.map(Number) || [];
 export var data = [],
   tagFilters = [],
   recs = [],
@@ -57,7 +58,7 @@ if (!jwt && location.hash.search('access_token') !== -1) {
 function validateUser() {
   if (!DEV) {
     if (settings.private || qe('#private').checked) {
-      if (jwt) return `userId: ${decodeJwt(jwt).sub}`;
+      if (jwt) return ['userId', decodeJwt(jwt).sub];
       else {
         message(
           '<a href="https://anilist.co/api/v2/oauth/authorize?client_id=9655&response_type=token">Authenticate with AniList</a>',
@@ -69,9 +70,9 @@ function validateUser() {
       if (!settings.username || !qe('#username').value) {
         message('╰(￣ω￣ｏ)', 'Fill your username');
         throw new Error('No username');
-      } else return `userName: "${settings.username || qe('#username').value}"`;
+      } else return ['userName', settings.username || qe('#username').value];
     }
-  } else return '';
+  } else return [];
 }
 // ^^^ AUTHENTICATION ^^^
 
@@ -87,25 +88,26 @@ async function* fetchData(onList = false) {
   };
   if (settings.private) headers['Authorization'] = `Bearer ${jwt}`;
   for (let chunk = 1; chunk < 21; chunk++) {
-    const queryStart = `{collection: MediaListCollection(${user} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
+    const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
     const recsQuery = `${queryStart} status_in: CURRENT){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
     console.log('Fetching chunk', chunk);
+    apiUrl.search = btoa(`${user[1]}-${onList ? 'ignores' : 'recs'}-${chunk}`);
+    DEV: apiUrl.search = atob(apiUrl.search.slice(1));
     const response = DEV
       ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(body => body.json())
-      : await getData(
-          apiUrl,
-          {
-            method: 'post',
-            mode: 'cors',
-            headers: headers,
-            body: JSON.stringify({
-              query: onList ? onListQuery : recsQuery,
-            }),
-          },
-          `${settings.private ? 'auth' : settings.username}-${chunk}`,
-          onList
-        ).then(body => body.json());
+      : await getData(apiUrl, {
+          method: 'post',
+          mode: 'cors',
+          headers: headers,
+          body: JSON.stringify({
+            query: onList ? onListQuery : recsQuery,
+          }),
+        }).then(body => (body ? body.json() : body));
+    if (!response) {
+      console.log(`Error fetching ${apiUrl.search}`);
+      return false;
+    }
     yield await Promise.resolve(
       response.data.collection.statuses
         .flatMap(statuses => statuses.list)
@@ -157,6 +159,7 @@ async function parseData() {
   settings = settingsSave();
   if (ignore.length == 0) {
     console.log('Nothing to ignore!');
+    ignore = [...userIgnored];
     message('Stalking your profile', '(⓿_⓿)');
     for await (const chunk of fetchData(true)) ignore.push(...chunk);
     console.log('Ignored entries:', ignore);
@@ -347,8 +350,20 @@ function drawRec(rec) {
   entry.appendChild(cell.cloneNode(true));
   cell.removeAttribute('class');
 
-  table.appendChild(entry.cloneNode(true));
+  ignoreButton = document.createElement('span');
+  ignoreButton.innerText = '×';
+  ignoreButton.className = 'ignore';
+  ignoreButton.addEventListener('click', () => {
+    ignore.push(rec.id);
+    userIgnored.push(rec.id);
+    localStorage.setItem('ignored', userIgnored);
+    console.log('Ignored', title);
+    entry.remove();
+  });
+  entry.appendChild(ignoreButton);
+  table.appendChild(entry);
 }
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Call API from login form
   qe('#login').addEventListener('submit', async event => {
@@ -387,8 +402,8 @@ function scrollHandler() {
 }
 
 // Try to get data from the cache, but fall back to fetching it live.
-async function getData(url, options = {}, userName = null, onList = false) {
-  const cacheName = `${cacheBaseName}-${onList ? 'onList' : 'recs'}-${userName}`;
+async function getData(url = apiUrl, options = {}) {
+  const cacheName = cacheBaseName; //`${cacheBaseName}-${onList ? 'onList' : 'recs'}-${userName}`;
   await deleteOldCaches(cacheName);
   let cachedData = await getCachedData(cacheName, url);
 
@@ -406,33 +421,34 @@ async function getData(url, options = {}, userName = null, onList = false) {
     return cachedData;
   }
 
-  console.log('Fetching fresh data:', cacheName);
+  console.log('Fetching fresh data:', url.search);
 
   const cacheStorage = await caches.open(cacheName);
-  cachedData = await fetch(url, options).then(response => {
+  cachedData = await fetch(url, options).then(async response => {
     if (!response.ok) {
-      message('Request failed!', response.status, response.statusText);
+      message(
+        'Request failed!',
+        response.status,
+        response.statusText || (await response.json())?.errors?.at(0)?.message
+      );
       return false;
     }
     cacheStorage
       .put(url, response.clone())
-      .then(() => localStorage.setItem('cacheExpiry', Date.now() + 10800000));
+      .then(() => localStorage.setItem('cacheExpiry', Date.now() + 10800000)); // 3h
     return response;
   });
   return cachedData;
 }
 
 // Get data from the cache.
-async function getCachedData(cacheName, url) {
+async function getCachedData(cacheName = cacheBaseName, url = apiUrl) {
   const cacheStorage = await caches.open(cacheName);
-  const cachedResponse = await cacheStorage.match(url);
-
-  if (!cachedResponse || !cachedResponse.ok || expiredCache()) {
-    await caches.delete(cacheName);
-    return false;
-  }
-
-  return cachedResponse;
+  return await cacheStorage.match(url, {
+    ignoreSearch: false,
+    ignoreMethod: true,
+    ignoreVary: true,
+  });
 }
 
 // Delete any old caches to respect user's disk space.
@@ -477,5 +493,9 @@ function settingsSave() {
 }
 
 function message() {
-  table.innerHTML = arguments.length ? `<h1>${Array.from(arguments).join('<br />')}</h1>` : '';
+  table.innerHTML = arguments.length
+    ? `<h1>${Array.from(arguments)
+        .filter(i => i)
+        .join('<br />')}</h1>`
+    : '';
 }
