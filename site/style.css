@@ -123,6 +123,13 @@ button {
   width: 1.5em;
 }
 
+#tag-filter {
+  background-color: var(--color-button-bg);
+  border-radius: 10%;
+  cursor: pointer;
+  padding: 0.5em;
+  position: absolute;
+}
 /* COVER AND RECOMMENDATIONS */
 .cover {
   grid-area: cover;

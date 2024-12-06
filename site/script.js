@@ -34,7 +34,8 @@ var settings = settingsLoad(),
   jwt = localStorage.getItem('jwt'),
   userIgnored = localStorage.getItem('ignored')?.split(',')?.map(Number) || [];
 export var data = [],
-  tagFilters = [],
+  wlTags = [],
+  blTags = [],
   recs = [],
   ignore = [],
   lastEntry = undefined;
@@ -213,22 +214,37 @@ async function parseData() {
 
 function filterTag(ev) {
   ev.preventDefault();
+
+  qa('#tag-filter').forEach(i => i.remove());
   const tagName = this.dataset.tag;
-  if (tagFilters.includes(tagName)) tagFilters.splice(tagFilters.indexOf(tagName), 1);
-  else tagFilters.push(tagName);
+  const buttons = document.createElement('div');
+  buttons.id = 'tag-filter';
+  buttons.style.position = 'absolute';
+  buttons.style.top = `${ev.pageY}px`;
+  buttons.style.left = `${ev.pageX}px`;
+  const whiteListBtn = document.createElement('span');
+  whiteListBtn.textContent = '✅';
+  whiteListBtn.addEventListener('click', () => doFilter(false), false);
+  const blackListBtn = document.createElement('span');
+  blackListBtn.textContent = '❌';
+  blackListBtn.addEventListener('click', () => doFilter(true), false);
+  buttons.append(whiteListBtn);
+  buttons.append(blackListBtn);
+  document.body.append(buttons);
 
-  qa('.content > .entry').forEach(entry => {
-    if (tagFilters.length == 0) {
-      entry.hidden = false;
-      return;
-    }
+  function doFilter(blacklist = false) {
+    const tagList = blacklist ? blTags : wlTags;
+    if (tagList.includes(tagName)) tagList.splice(tagList.indexOf(tagName), 1);
+    else tagList.push(tagName);
 
-    const tagElement = entry.querySelector(`[data-tag="${tagName}"]`);
-    if (tagElement) tagElement.classList.toggle('filtered');
-    const filtered = [];
-    entry.querySelectorAll('.tag.filtered').forEach(f => filtered.push(f.dataset.tag));
-    entry.hidden = !tagFilters.every(f => filtered.includes(f));
-  });
+    qa('.content > .entry').forEach(entry => {
+      const tag = entry.querySelector(`[data-tag="${tagName}"]`);
+      const tags = Array.from(entry.querySelectorAll('.tag')).map(t => t.dataset.tag);
+      entry.hidden = blTags.some(t => tags.includes(t)) || !wlTags.every(t => tags.includes(t));
+      if (!blacklist && tag) tag.classList.toggle('filtered');
+    });
+    buttons.remove();
+  }
 }
 
 function drawRec(rec) {
