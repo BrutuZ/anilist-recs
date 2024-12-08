@@ -132,7 +132,9 @@ function parseRecs(manga) {
       rec.isAdult == qe('#adult').selectedIndex ||
       rec.meanScore < qe('#minScore').value ||
       (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
-      (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
+      (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status)) ||
+      blTags.some(b => rec.tags.map(t => t.name).includes(b)) ||
+      !wlTags.every(w => rec.tags.map(t => t.name).includes(w))
       // || e.rating < 1
     )
       return;
@@ -219,7 +221,6 @@ function filterTag(ev) {
   const tagName = this.dataset.tag;
   const buttons = document.createElement('div');
   buttons.id = 'tag-filter';
-  buttons.style.position = 'absolute';
   buttons.style.top = `${ev.pageY}px`;
   buttons.style.left = `${ev.pageX}px`;
   const whiteListBtn = document.createElement('span');
@@ -241,7 +242,10 @@ function filterTag(ev) {
       const tag = entry.querySelector(`[data-tag="${tagName}"]`);
       const tags = Array.from(entry.querySelectorAll('.tag')).map(t => t.dataset.tag);
       entry.hidden = blTags.some(t => tags.includes(t)) || !wlTags.every(t => tags.includes(t));
-      if (!blacklist && tag) tag.classList.toggle('filtered');
+      if (tag) {
+        if (blacklist) tag.classList.toggle('rejected');
+        else tag.classList.toggle('filtered');
+      }
     });
     buttons.remove();
   }
@@ -355,6 +359,8 @@ function drawRec(rec) {
       const container = document.createElement('div');
       container.append(tag);
       container.className = 'tag';
+      if (blTags.includes(tag)) container.classList.add('rejected');
+      if (wlTags.includes(tag)) container.classList.add('filtered');
       container.dataset.tag = tag;
       text.appendChild(container);
     });
@@ -398,17 +404,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Back to Top button
   qe('#top').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
-  document.addEventListener(
-    'scroll',
-    () => (qe('#top').hidden = scrollY < visualViewport.height * 1.1)
-  );
-
   // Scroll Handler for Pagination
   document.addEventListener('scroll', scrollHandler);
 });
 
 function scrollHandler() {
   document.querySelector('#top').hidden = scrollY < visualViewport.height * 1.1;
+  qa('#tag-filter').forEach(i => i.remove());
+
   // TODO:
   // if (lastEntry && scrollY > lastEntry.offsetTop) {
   //   // Paginate stuff

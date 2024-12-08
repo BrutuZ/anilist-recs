@@ -7,6 +7,7 @@
   --color-text: #9fadbd;
   --color-tag: #d3e7f3;
   --color-tag-active: #81f066;
+  --color-tag-rejected: #f06666;
   --color-tag-text: #1b4964;
 }
 
@@ -127,6 +128,9 @@ button {
   background-color: var(--color-button-bg);
   border-radius: 10%;
   cursor: pointer;
+  display: flex;
+  font-size: larger;
+  gap: 1em;
   padding: 0.5em;
   position: absolute;
 }
@@ -218,6 +222,9 @@ img {
 }
 .tag.filtered {
   background-color: var(--color-tag-active);
+}
+.tag.rejected {
+  background-color: var(--color-tag-rejected);
 }
 
 /* PORTRAIT OVERRIDES */
