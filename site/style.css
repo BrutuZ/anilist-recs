@@ -71,6 +71,14 @@ button {
   cursor: pointer;
   padding: 0.25em 0.5em;
 }
+#active-tags {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background-color: rgb(from var(--color-bg) r g b / 0.8);
+  top: 0;
+  width: 100%;
+  z-index: 10;
+}
 
 /* CONTAINER */
 .container {
@@ -108,15 +116,19 @@ button {
 .entry:nth-child(even of :not([hidden])) {
   background-color: var(--color-fg);
 }
+.entry:nth-child(even of :not([hidden])) .ignore {
+  border-color: var(--color-fg);
+}
 
 .ignore {
-  align-items: center;
   background-color: var(--color-tag-text);
+  border-color: var(--color-bg);
   border-radius: 100%;
+  border-style: solid;
+  border-width: 5px;
   cursor: pointer;
   font-weight: bolder;
   height: 1.5em;
-  justify-content: center;
   line-height: 1.5rem;
   position: absolute;
   right: 1em;
@@ -225,6 +237,7 @@ img {
 }
 .tag.rejected {
   background-color: var(--color-tag-rejected);
+  color: var(--color-tag);
 }
 
 /* PORTRAIT OVERRIDES */

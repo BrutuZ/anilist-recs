@@ -225,15 +225,15 @@ function filterTag(ev) {
   buttons.style.left = `${ev.pageX}px`;
   const whiteListBtn = document.createElement('span');
   whiteListBtn.textContent = '✅';
-  whiteListBtn.addEventListener('click', () => doFilter(false), false);
+  whiteListBtn.addEventListener('click', () => doFilter(false, this), false);
   const blackListBtn = document.createElement('span');
   blackListBtn.textContent = '❌';
-  blackListBtn.addEventListener('click', () => doFilter(true), false);
+  blackListBtn.addEventListener('click', () => doFilter(true, this), false);
   buttons.append(whiteListBtn);
   buttons.append(blackListBtn);
   document.body.append(buttons);
 
-  function doFilter(blacklist = false) {
+  function doFilter(blacklist = false, element) {
     const tagList = blacklist ? blTags : wlTags;
     if (tagList.includes(tagName)) tagList.splice(tagList.indexOf(tagName), 1);
     else tagList.push(tagName);
@@ -247,6 +247,14 @@ function filterTag(ev) {
         else tag.classList.toggle('filtered');
       }
     });
+    let headerTag = qe(`#active-tags [data-tag="${tagName}"]`);
+    if (headerTag) headerTag.remove();
+    else {
+      headerTag = element.cloneNode(true);
+      headerTag.addEventListener('click', () => doFilter(blacklist, headerTag));
+      qe('#active-tags').appendChild(headerTag);
+    }
+
     buttons.remove();
   }
 }
@@ -409,7 +417,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function scrollHandler() {
-  document.querySelector('#top').hidden = scrollY < visualViewport.height * 1.1;
+  qe('#top').hidden = scrollY < visualViewport.height * 1.1;
+  if (qe('.settings').getBoundingClientRect().top < 0)
+    qe('#active-tags').style = 'position: fixed;';
+  else qe('#active-tags').removeAttribute('style');
   qa('#tag-filter').forEach(i => i.remove());
 
   // TODO:
