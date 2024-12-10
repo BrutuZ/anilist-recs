@@ -132,9 +132,7 @@ function parseRecs(manga) {
       rec.isAdult == qe('#adult').selectedIndex ||
       rec.meanScore < qe('#minScore').value ||
       (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
-      (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status)) ||
-      blTags.some(b => rec.tags.map(t => t.name).includes(b)) ||
-      !wlTags.every(w => rec.tags.map(t => t.name).includes(w))
+      (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
       // || e.rating < 1
     )
       return;
@@ -269,6 +267,9 @@ function drawRec(rec) {
 
   entry.classList.add('entry');
   entry.id = `id-${rec.id}`;
+  entry.hidden =
+    blTags.some(b => rec.tags.map(t => t.name).includes(b)) ||
+    !wlTags.every(w => rec.tags.map(t => t.name).includes(w));
 
   // COVER + URL
   link.target = '_blank';
