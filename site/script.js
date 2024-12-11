@@ -21,6 +21,7 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 });
 const qe = document.querySelector.bind(document);
 const qa = document.querySelectorAll.bind(document);
+const ce = document.createElement.bind(document);
 const cacheBaseName = 'MangaRecs';
 const apiUrl = new URL('https://graphql.anilist.co');
 const table = qe('.content');
@@ -30,15 +31,15 @@ const statusMap = {
   Ongoing: ['RELEASING', 'HIATUS'],
   Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
 };
-var settings = settingsLoad(),
-  jwt = localStorage.getItem('jwt'),
-  userIgnored = localStorage.getItem('ignored')?.split(',')?.map(Number) || [];
 export var data = [],
   wlTags = [],
   blTags = [],
+  userIgnored = [],
   recs = [],
   ignore = [],
   lastEntry = undefined;
+var settings = settingsLoad(),
+  jwt = localStorage.getItem('jwt');
 deleteOldCaches(); // Clear expired cache
 
 // vvv AUTHENTICATION vvv
@@ -179,6 +180,7 @@ async function parseData() {
   console.log('Recomendations:', recs);
   message();
 
+  console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
   recs
     .sort((a, b) => {
       switch (settings.sortMode) {
@@ -208,38 +210,49 @@ async function parseData() {
       }
     })
     .forEach(drawRec);
+  // I hate this so much
   qa('.tag').forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
   console.log('Parsed!');
 }
 
 function filterTag(ev) {
+  console.log(this, ev);
   ev.preventDefault();
-
   qa('#tag-filter').forEach(i => i.remove());
   const tagName = this.dataset.tag;
-  const buttons = document.createElement('div');
+  if (ev.target.classList.contains('rejected')) {
+    doTagFilter(true);
+    return;
+  }
+  if (ev.target.classList.contains('filtered')) {
+    doTagFilter(false);
+    return;
+  }
+  const buttons = ce('div');
   buttons.id = 'tag-filter';
   buttons.style.top = `${ev.pageY}px`;
   buttons.style.left = `${ev.pageX}px`;
-  const whiteListBtn = document.createElement('span');
+  const whiteListBtn = ce('span');
   whiteListBtn.textContent = '✅';
-  whiteListBtn.addEventListener('click', () => doFilter(false, this), false);
-  const blackListBtn = document.createElement('span');
+  whiteListBtn.addEventListener('click', () => doTagFilter(false, this), false);
+  const blackListBtn = ce('span');
   blackListBtn.textContent = '❌';
-  blackListBtn.addEventListener('click', () => doFilter(true, this), false);
+  blackListBtn.addEventListener('click', () => doTagFilter(true, this), false);
   buttons.append(whiteListBtn);
   buttons.append(blackListBtn);
   document.body.append(buttons);
 
-  function doFilter(blacklist = false, element) {
+  function doTagFilter(blacklist = false, element = undefined) {
     const tagList = blacklist ? blTags : wlTags;
+    const listType = blacklist ? 'blacklist' : 'whitelist';
     if (tagList.includes(tagName)) tagList.splice(tagList.indexOf(tagName), 1);
     else tagList.push(tagName);
+    tagList.length ? localStorage.setItem(listType, tagList) : localStorage.removeItem(listType);
 
     qa('.content > .entry').forEach(entry => {
       const tag = entry.querySelector(`[data-tag="${tagName}"]`);
       const tags = Array.from(entry.querySelectorAll('.tag')).map(t => t.dataset.tag);
-      entry.hidden = blTags.some(t => tags.includes(t)) || !wlTags.every(t => tags.includes(t));
+      entry.hidden = blTags?.some(t => tags.includes(t)) || !wlTags?.every(t => tags.includes(t));
       if (tag) {
         if (blacklist) tag.classList.toggle('rejected');
         else tag.classList.toggle('filtered');
@@ -248,22 +261,34 @@ function filterTag(ev) {
     let headerTag = qe(`#active-tags [data-tag="${tagName}"]`);
     if (headerTag) headerTag.remove();
     else {
-      headerTag = element.cloneNode(true);
-      headerTag.addEventListener('click', () => doFilter(blacklist, headerTag));
+      headerTag = element?.cloneNode(true);
+      headerTag.addEventListener('click', () => doTagFilter(blacklist, headerTag));
       qe('#active-tags').appendChild(headerTag);
     }
 
-    buttons.remove();
+    qa('#tag-filter').forEach(i => i.remove());
   }
 }
 
-function drawRec(rec) {
-  const entry = document.createElement('div');
-  const cell = document.createElement('div');
-  const text = document.createElement('p');
+function appendTag(tag) {
+  const container = ce('div');
+  container.append(tag);
+  container.classList.add('tag');
+  if (blTags.includes(tag)) container.classList.add('rejected');
+  if (wlTags.includes(tag)) container.classList.add('filtered');
+  container.dataset.tag = tag;
+  // Doesn't in the main table for some reason
+  // container.addEventListener('click', filterTag, { capture: true });
+  this.appendChild(container);
+}
 
-  const link = document.createElement('a');
-  const img = document.createElement('img');
+function drawRec(rec) {
+  const entry = ce('div');
+  const cell = ce('div');
+  const text = ce('p');
+
+  const link = ce('a');
+  const img = ce('img');
 
   entry.classList.add('entry');
   entry.id = `id-${rec.id}`;
@@ -311,8 +336,8 @@ function drawRec(rec) {
 
   // TITLE (PORTRAIT)
   cell.innerHTML = '';
-  const textContainer = document.createElement('div');
-  const header = document.createElement('h3');
+  const textContainer = ce('div');
+  const header = ce('h3');
   const title = englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
   header.textContent = `${rec.isAdult ? '🔞' : ''}${flags[rec.countryOfOrigin]} ${title}`;
   if (englishTitles && rec.title.english) header.classList.add('licensed');
@@ -359,29 +384,20 @@ function drawRec(rec) {
   text.innerHTML = rec.description || '<i>&lt;Empty Description&gt;</i>';
   textContainer.appendChild(text.cloneNode(true));
 
-  text.innerHTML = '';
-  text.classList.add('tags');
+  const tags = ce('span');
+  tags.classList.add('tags');
   rec.tags
     ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
     .map(tag => tag.name)
-    .forEach(tag => {
-      const container = document.createElement('div');
-      container.append(tag);
-      container.className = 'tag';
-      if (blTags.includes(tag)) container.classList.add('rejected');
-      if (wlTags.includes(tag)) container.classList.add('filtered');
-      container.dataset.tag = tag;
-      text.appendChild(container);
-    });
-  if (text.innerHTML) textContainer.appendChild(text.cloneNode(true));
-  text.removeAttribute('class');
+    .forEach(appendTag, tags);
+  if (tags.innerHTML) textContainer.appendChild(tags);
 
   cell.appendChild(textContainer.cloneNode(true));
   cell.classList.add('details');
   entry.appendChild(cell.cloneNode(true));
   cell.removeAttribute('class');
 
-  ignoreButton = document.createElement('span');
+  const ignoreButton = ce('span');
   ignoreButton.innerText = '×';
   ignoreButton.className = 'ignore';
   ignoreButton.addEventListener('click', () => {
@@ -508,6 +524,10 @@ function settingsLoad() {
     else el.value = setting[1];
   });
   qe('#username').hidden = qe('#username').disabled = qe('#private').checked;
+  wlTags = localStorage.getItem('whitelist')?.split(',') || [];
+  blTags = localStorage.getItem('blacklist')?.split(',') || [];
+  qe('#active-tags').innerHTML = '';
+  [...wlTags, ...blTags].forEach(appendTag, qe('#active-tags'));
   console.log('Read settings:', settings);
   return settings;
 }
