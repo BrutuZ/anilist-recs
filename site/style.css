@@ -173,12 +173,14 @@ img {
 
 /* TITLES */
 .titles {
+  /* LANDSCAPE LAYOUT */
   grid-area: titles;
 }
 .title {
   /* PORTRAIT LAYOUT */
   display: none;
   grid-area: title;
+  margin: auto 2.5em auto 2.5em;
 }
 .alt-titles {
   /* PORTRAIT LAYOUT */
@@ -215,6 +217,7 @@ img {
   flex-direction: column;
   gap: 20px;
   justify-content: space-between;
+  padding-top: 2.5em;
 }
 
 /* TAGS */
@@ -269,5 +272,8 @@ img {
   }
   .title > div > p {
     margin-bottom: 1.5em;
+  }
+  .details > div {
+    padding-top: 0;
   }
 }
