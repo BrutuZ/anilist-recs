@@ -181,6 +181,7 @@ async function parseData() {
   message();
 
   console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
+  qe('.header').innerHTML = `${recs.length} Recommendations`;
   recs
     .sort((a, b) => {
       switch (settings.sortMode) {

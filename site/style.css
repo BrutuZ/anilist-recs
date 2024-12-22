@@ -88,14 +88,6 @@ button {
   width: 80%;
 }
 
-.header {
-  border: 0 none;
-  text-align: center;
-}
-.header > .title {
-  margin-top: 0.5em;
-}
-
 /* ENTRIES */
 .entry {
   border: 2px solid var(--color-fg);
@@ -118,6 +110,15 @@ button {
 }
 .entry:nth-child(even of :not([hidden])) .ignore {
   border-color: var(--color-fg);
+}
+
+.header {
+  border: 0 none;
+  display: block;
+  text-align: center;
+}
+.header > .title {
+  margin-top: 0.5em;
 }
 
 .ignore {
@@ -251,9 +252,9 @@ img {
   button {
     font-size: 0.75rem;
   }
-  .header {
+  /* .header {
     display: none;
-  }
+  } */
   .container {
     left: 5%;
     width: 90%;
