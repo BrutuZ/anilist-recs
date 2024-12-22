@@ -118,6 +118,7 @@ async function* fetchData(onList = false) {
     );
     console.log('hasNextChunk:', response.data.collection.hasNextChunk);
     if (!response.data.collection.hasNextChunk) break;
+    DEV: break;
   }
 }
 
