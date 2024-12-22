@@ -72,7 +72,7 @@ function validateUser() {
       if (!settings.username || !qe('#username').value) {
         message('╰(￣ω￣ｏ)', 'Fill your username');
         throw new Error('No username');
-      } else return ['userName', settings.username || qe('#username').value];
+      } else return ['userName', `"${settings.username || qe('#username').value}"`];
     }
   } else return [];
 }
