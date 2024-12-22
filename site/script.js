@@ -81,7 +81,8 @@ function validateUser() {
 async function* fetchData(onList = false) {
   settingsSave();
   const user = validateUser();
-  const perChunk = 500; // onList ? 500 : 100;
+  let perChunk = 500; // onList ? 500 : 100;
+  DEV: perChunk = 5;
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description chapters countryOfOrigin isAdult';
   const headers = {
