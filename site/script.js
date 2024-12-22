@@ -93,9 +93,16 @@ async function* fetchData(onList = false) {
   for (let chunk = 1; chunk < 21; chunk++) {
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
-    const recsQuery = `${queryStart} status_in: CURRENT){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${recsSubQuery}}}}}}}}}}}}`;
+    const recsQuery = `${queryStart} status_in: [CURRENT${settings.planning ? ',PLANNING' : ''}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
     console.log('Fetching chunk', chunk);
-    apiUrl.search = btoa(`${user[1]}-${onList ? 'ignores' : 'recs'}-${chunk}`);
+    apiUrl.search = '';
+    apiUrl.searchParams.set(user[0], user[1].split('"')[1]);
+    apiUrl.searchParams.set('page', chunk);
+    if (!onList) {
+      apiUrl.searchParams.set('subRecs', settings.subRecs);
+      apiUrl.searchParams.set('planning', settings.planning);
+    }
+    apiUrl.search = btoa(apiUrl.search.slice(1));
     DEV: apiUrl.search = atob(apiUrl.search.slice(1));
     const response = DEV
       ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(body => body.json())
