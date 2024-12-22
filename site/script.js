@@ -99,7 +99,7 @@ async function* fetchData(onList = false) {
     DEV: apiUrl.search = atob(apiUrl.search.slice(1));
     const response = DEV
       ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(body => body.json())
-      : await getData(apiUrl, {
+      : await getData({
           method: 'post',
           mode: 'cors',
           headers: headers,
@@ -452,14 +452,14 @@ function scrollHandler() {
 }
 
 // Try to get data from the cache, but fall back to fetching it live.
-async function getData(url = apiUrl, options = {}) {
+async function getData(options = {}) {
   const cacheName = cacheBaseName; //`${cacheBaseName}-${onList ? 'onList' : 'recs'}-${userName}`;
   await deleteOldCaches(cacheName);
-  let cachedData = await getCachedData(cacheName, url);
+  let cachedData = await getCachedData(cacheName);
 
   qe('#cached').hidden = !Boolean(cachedData);
   if (cachedData) {
-    console.log('Retrieved cached data:', cacheName);
+    console.log('Retrieved cached data', apiUrl.search.slice(1));
     const cacheCountdown = new Date(
       (localStorage.getItem('cacheExpiry') || Date.now()) - Date.now()
     )
@@ -471,10 +471,10 @@ async function getData(url = apiUrl, options = {}) {
     return cachedData;
   }
 
-  console.log('Fetching fresh data:', url.search);
+  console.log('Fetching fresh data', apiUrl.search.slice(1));
 
   const cacheStorage = await caches.open(cacheName);
-  cachedData = await fetch(url, options).then(async response => {
+  cachedData = await fetch(apiUrl, options).then(async response => {
     if (!response.ok) {
       message(
         'Request failed!',
@@ -484,7 +484,7 @@ async function getData(url = apiUrl, options = {}) {
       return false;
     }
     cacheStorage
-      .put(url, response.clone())
+      .put(apiUrl, response.clone())
       .then(() => localStorage.setItem('cacheExpiry', Date.now() + 10800000)); // 3h
     return response;
   });
@@ -492,9 +492,9 @@ async function getData(url = apiUrl, options = {}) {
 }
 
 // Get data from the cache.
-async function getCachedData(cacheName = cacheBaseName, url = apiUrl) {
+async function getCachedData(cacheName = cacheBaseName) {
   const cacheStorage = await caches.open(cacheName);
-  return await cacheStorage.match(url, {
+  return await cacheStorage.match(apiUrl, {
     ignoreSearch: false,
     ignoreMethod: true,
     ignoreVary: true,
