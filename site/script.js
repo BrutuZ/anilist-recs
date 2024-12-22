@@ -161,20 +161,15 @@ function parseRecs(manga) {
 
 async function parseData() {
   settings = settingsSave();
-  if (ignore.length == 0) {
-    console.log('Nothing to ignore!');
-    ignore = [...userIgnored];
-    message('Stalking your profile', '(⓿_⓿)');
-    for await (const chunk of fetchData(true)) ignore.push(...chunk);
-    console.log('Ignored entries:', ignore);
-  }
-  if (data.length == 0) {
-    console.log('Nothing to parse!');
-    message('Digging Recommentations...', '(This may take a while)', '(∪.∪ )...zzz');
-    for await (const chunk of fetchData(false)) data.push(...chunk);
-    console.log('Reading list:', data);
-  }
-  const englishTitles = settings.englishTitles;
+  console.log('Nothing to ignore!');
+  ignore = [...userIgnored];
+  message('Stalking your profile', '(⓿_⓿)');
+  for await (const chunk of fetchData(true)) ignore.push(...chunk);
+  console.log('Ignored entries:', ignore);
+  console.log('Nothing to parse!');
+  message('Digging Recommentations...', '(This may take a while)', '(∪.∪ )...zzz');
+  for await (const chunk of fetchData(false)) data.push(...chunk);
+  console.log('Reading list:', data);
   recs = [];
 
   console.log('Parsing Recomendations...');
@@ -341,9 +336,9 @@ function drawRec(rec) {
   cell.innerHTML = '';
   const textContainer = ce('div');
   const header = ce('h3');
-  const title = englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
+  const title = settings.englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
   header.textContent = `${rec.isAdult ? '🔞' : ''}${flags[rec.countryOfOrigin]} ${title}`;
-  if (englishTitles && rec.title.english) header.classList.add('licensed');
+  if (settings.englishTitles && rec.title.english) header.classList.add('licensed');
   textContainer.appendChild(header);
   cell.appendChild(textContainer.cloneNode(true));
 
