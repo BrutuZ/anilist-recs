@@ -8,7 +8,6 @@
     ":automergeMinor",
     ":automergeDigest",
   ],
-  "dependencyDashboardAutoclose": true,
   "labels": ["Dependency"],
   "minimumReleaseAge": "1 week",
   "packageRules": [
