@@ -523,8 +523,17 @@ function settingsLoad() {
   const settings = JSON.parse(localStorage.getItem('settings') || '{}');
   Object.entries(settings).forEach(setting => {
     const el = document.getElementById(setting[0]);
-    if (el.type == 'checkbox') el.checked = setting[1];
-    else el.value = setting[1];
+    switch (el.type) {
+      case 'checkbox':
+        el.checked = setting[1];
+        break;
+      case 'select':
+        Array.from(el.options).forEach(o => (o.selected = setting[1].includes(o.value)));
+        break;
+      default:
+        el.value = setting[1];
+        break;
+    }
   });
   qe('#username').hidden = qe('#username').disabled = qe('#private').checked;
   wlTags = localStorage.getItem('whitelist')?.split(',') || [];
@@ -538,8 +547,18 @@ function settingsSave() {
   const settings = {};
   const elements = qa('.settings input, .settings select');
   elements.forEach(el => {
-    if (el.type == 'checkbox') settings[el.id] = el.checked;
-    else settings[el.id] = el.value;
+    if (!el.id) return;
+    switch (el.type) {
+      case 'checkbox':
+        settings[el.id] = el.checked;
+        break;
+      case 'select':
+        settings[el.id] = Array.from(el.selectedOptions).map(s => s.value);
+        break;
+      default:
+        settings[el.id] = el.value;
+        break;
+    }
   });
   console.log('Saving settings:', settings);
   localStorage.setItem('settings', JSON.stringify(settings));
