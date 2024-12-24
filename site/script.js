@@ -1,4 +1,4 @@
-import { decodeJwt } from 'jose';
+import { deleteOldCaches, getData } from './modules/caching';
 
 DEV: new EventSource('/esbuild').addEventListener('change', e => {
   const { added, removed, updated } = JSON.parse(e.data);
@@ -19,11 +19,10 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
-const qe = document.querySelector.bind(document);
+export const qe = document.querySelector.bind(document);
 const qa = document.querySelectorAll.bind(document);
 const ce = document.createElement.bind(document);
-const cacheBaseName = 'MangaRecs';
-const apiUrl = new URL('https://graphql.anilist.co');
+export const apiUrl = new URL('https://graphql.anilist.co');
 const table = qe('.content');
 const statusSelect = qe('#status');
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
@@ -36,9 +35,9 @@ export var data = [],
   blTags = [],
   userIgnored = [],
   recs = [],
-  ignore = [],
-  lastEntry = undefined;
+  ignore = [];
 var settings = settingsLoad(),
+  // lastEntry = undefined,
   jwt = localStorage.getItem('jwt');
 deleteOldCaches(); // Clear expired cache
 
@@ -58,24 +57,24 @@ if (!jwt && location.hash.search('access_token') !== -1) {
 }
 
 function validateUser() {
-  if (!DEV) {
-    if (settings.private || qe('#private').checked) {
-      if (jwt) return ['userId', decodeJwt(jwt).sub];
-      else {
-        message(
-          '<a href="https://anilist.co/api/v2/oauth/authorize?client_id=9655&response_type=token">Authenticate with AniList</a>',
-          'to see Private Profile / Entries'
-        );
-        throw new Error('Unauthenticated');
-      }
-    } else {
-      if (!settings.username || !qe('#username').value) {
-        message('╰(￣ω￣ｏ)', 'Fill your username');
-        throw new Error('No username');
-      } else return ['userName', `"${settings.username || qe('#username').value}"`];
+  if (DEV) return ['', ''];
+  if (settings.private || qe('#private').checked) {
+    if (jwt) return ['userId', decodeJwt(jwt).sub];
+    else {
+      message(
+        '<a href="https://anilist.co/api/v2/oauth/authorize?client_id=9655&response_type=token">Authenticate with AniList</a>',
+        'to see Private Profile / Entries'
+      );
+      throw new Error('Unauthenticated');
     }
-  } else return [];
+  } else {
+    if (!settings.username || !qe('#username').value) {
+      message('╰(￣ω￣ｏ)', 'Fill your username');
+      throw new Error('No username');
+    } else return ['userName', `"${settings.username || qe('#username').value}"`];
+  }
 }
+
 // ^^^ AUTHENTICATION ^^^
 
 async function* fetchData(onList = false) {
@@ -91,16 +90,24 @@ async function* fetchData(onList = false) {
   };
   if (settings.private) headers['Authorization'] = `Bearer ${jwt}`;
   for (let chunk = 1; chunk < 21; chunk++) {
+    onList
+      ? message('Stalking your profile', '(⓿_⓿)', `Page ${chunk}`)
+      : message(
+          'Digging Recommentations...',
+          '(This may take a while)',
+          '(∪.∪ )...zzz',
+          `Page ${chunk}`
+        );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
-    const recsQuery = `${queryStart} status_in: [CURRENT${settings.planning ? ',PLANNING' : ''}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
+    const recsQuery = `${queryStart} status_in: [${settings.lists?.join().toUpperCase()}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
     console.log('Fetching chunk', chunk);
     apiUrl.search = '';
     apiUrl.searchParams.set(user[0], user[1].split('"')[1]);
     apiUrl.searchParams.set('page', chunk);
     if (!onList) {
       apiUrl.searchParams.set('subRecs', settings.subRecs);
-      apiUrl.searchParams.set('planning', settings.planning);
+      apiUrl.searchParams.set('lists', settings.lists?.join());
     }
     apiUrl.search = btoa(apiUrl.search.slice(1));
     DEV: apiUrl.search = atob(apiUrl.search.slice(1));
@@ -130,9 +137,6 @@ async function* fetchData(onList = false) {
 }
 
 function parseRecs(manga) {
-  const country = Array.from(qa('#country > input'))
-    .filter(option => option.checked)
-    .map(option => option.id);
   manga.recommendations.entries.forEach(entry => {
     const rec = entry.mediaRecommendation;
     // APPLY FILTERS
@@ -141,7 +145,7 @@ function parseRecs(manga) {
       ignore.includes(rec.id) ||
       rec.isAdult == qe('#adult').selectedIndex ||
       rec.meanScore < qe('#minScore').value ||
-      (country.length > 0 && !country?.includes(rec.countryOfOrigin)) ||
+      (settings.country.length > 0 && !settings.country?.includes(rec.countryOfOrigin)) ||
       (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
       // || e.rating < 1
     )
@@ -170,11 +174,9 @@ async function parseData() {
   settings = settingsSave();
   console.log('Nothing to ignore!');
   ignore = [...userIgnored];
-  message('Stalking your profile', '(⓿_⓿)');
   for await (const chunk of fetchData(true)) ignore.push(...chunk);
   console.log('Ignored entries:', ignore);
   console.log('Nothing to parse!');
-  message('Digging Recommentations...', '(This may take a while)', '(∪.∪ )...zzz');
   for await (const chunk of fetchData(false)) data.push(...chunk);
   console.log('Reading list:', data);
   recs = [];
@@ -327,6 +329,7 @@ function drawRec(rec) {
   cell.classList.add('recs');
   img.width = 75;
   rec.recommended.forEach(origin => {
+    if ($(cell).find(`img[src="${origin.cover}"]`).length > 0) return;
     link.innerHTML = '';
     link.target = '_blank';
     link.href = origin.url;
@@ -436,6 +439,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Scroll Handler for Pagination
   document.addEventListener('scroll', scrollHandler);
+
+  // Style Selects
+  $('select').select2({
+    containerCssClass: 'sc',
+    dropdownCssClass: 'sc',
+    minimumResultsForSearch: -1,
+  });
 });
 
 function scrollHandler() {
@@ -453,87 +463,15 @@ function scrollHandler() {
   // }
 }
 
-// Try to get data from the cache, but fall back to fetching it live.
-async function getData(options = {}) {
-  const cacheName = cacheBaseName; //`${cacheBaseName}-${onList ? 'onList' : 'recs'}-${userName}`;
-  await deleteOldCaches(cacheName);
-  let cachedData = await getCachedData(cacheName);
-
-  qe('#cached').hidden = !Boolean(cachedData);
-  if (cachedData) {
-    console.log('Retrieved cached data', apiUrl.search.slice(1));
-    const cacheCountdown = new Date(
-      (localStorage.getItem('cacheExpiry') || Date.now()) - Date.now()
-    )
-      .toISOString()
-      .slice(11, 16)
-      .replace('00:', '')
-      .replace(':', 'h ');
-    qe('#cached > p').textContent = `${cacheCountdown}m`;
-    return cachedData;
-  }
-
-  console.log('Fetching fresh data', apiUrl.search.slice(1));
-
-  const cacheStorage = await caches.open(cacheName);
-  cachedData = await fetch(apiUrl, options).then(async response => {
-    if (!response.ok) {
-      message(
-        'Request failed!',
-        response.status,
-        response.statusText || (await response.json())?.errors?.at(0)?.message
-      );
-      return false;
-    }
-    cacheStorage
-      .put(apiUrl, response.clone())
-      .then(() => localStorage.setItem('cacheExpiry', Date.now() + 10800000)); // 3h
-    return response;
-  });
-  return cachedData;
-}
-
-// Get data from the cache.
-async function getCachedData(cacheName = cacheBaseName) {
-  const cacheStorage = await caches.open(cacheName);
-  return await cacheStorage.match(apiUrl, {
-    ignoreSearch: false,
-    ignoreMethod: true,
-    ignoreVary: true,
-  });
-}
-
-// Delete any old caches to respect user's disk space.
-async function deleteOldCaches(cacheName = cacheBaseName) {
-  const keys = await caches.keys();
-
-  for (const key of keys) {
-    const isOurCache = typeof cacheBaseName == 'boolean' || key.startsWith(cacheBaseName);
-    if (!expiredCache() && (cacheName === key || isOurCache)) {
-      continue;
-    }
-    console.log('Deleting', key);
-    caches.delete(key);
-  }
-}
-
-function expiredCache() {
-  return Date.now() > (localStorage.getItem('cacheExpiry') || 1); // Invalidate if cache is over 3h old
-}
-
 function settingsLoad() {
-  const settings = JSON.parse(localStorage.getItem('settings') || '{}');
-  Object.entries(settings).forEach(setting => {
-    const el = document.getElementById(setting[0]);
-    switch (el.type) {
+  const savedSettings = JSON.parse(localStorage.getItem('settings') || '{}');
+  $.each(savedSettings, (key, value) => {
+    switch ($(key).prop('type')) {
       case 'checkbox':
-        el.checked = setting[1];
-        break;
-      case 'select':
-        Array.from(el.options).forEach(o => (o.selected = setting[1].includes(o.value)));
+        $(`#${key}`).prop('checked', value);
         break;
       default:
-        el.value = setting[1];
+        $(`#${key}`).val(value).trigger('change');
         break;
     }
   });
@@ -542,32 +480,34 @@ function settingsLoad() {
   blTags = localStorage.getItem('blacklist')?.split(',') || [];
   qe('#active-tags').innerHTML = '';
   [...wlTags, ...blTags].forEach(appendTag, qe('#active-tags'));
-  console.log('Read settings:', settings);
-  return settings;
+  console.log('Read settings:', savedSettings);
+  return savedSettings;
 }
 function settingsSave() {
-  const settings = {};
-  const elements = qa('.settings input, .settings select');
-  elements.forEach(el => {
+  const savedSettings = {};
+  $('.settings input, .settings select').each((_, el) => {
     if (!el.id) return;
     switch (el.type) {
       case 'checkbox':
-        settings[el.id] = el.checked;
+        savedSettings[el.id] = el.checked;
         break;
-      case 'select':
-        settings[el.id] = Array.from(el.selectedOptions).map(s => s.value);
+      case 'select-multiple':
+        savedSettings[el.id] = $(el)
+          .find('option:selected')
+          .map((_, option) => option.id || option.value)
+          .get();
         break;
       default:
-        settings[el.id] = el.value;
+        savedSettings[el.id] = $(el).val();
         break;
     }
   });
-  console.log('Saving settings:', settings);
-  localStorage.setItem('settings', JSON.stringify(settings));
-  return settings;
+  console.log('Saving settings:', savedSettings);
+  localStorage.setItem('settings', JSON.stringify(savedSettings));
+  return savedSettings;
 }
 
-function message() {
+export function message() {
   table.innerHTML = arguments.length
     ? `<h1>${Array.from(arguments)
         .filter(i => i)

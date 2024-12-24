@@ -83,6 +83,52 @@
       onload="this.onload=null;this.rel='stylesheet'"
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
     />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.slim.min.js"
+      integrity="sha512-sNylduh9fqpYUK5OYXWcBleGzbZInWj8yCJAU57r1dpSK9tP2ghf/SRYCMj+KsslFkCOt3TvJrX2AV/Gc3wOqA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js"
+      integrity="sha512-RtZU3AyMVArmHLiW0suEZ9McadTdegwbgtiQl5Qqo9kunkVg1ofwueXD8/8wv3Af8jkME3DDe3yLfR8HSJfT2g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+      async
+    ></script>
+    <!-- <link
+      rel="preload"
+      as="style"
+      type="text/css"
+      onload="this.onload=null;this.rel='stylesheet'"
+      href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css"
+      integrity="sha512-nMNlpuaDPrqlEls3IX/Q56H36qvBASwb3ipuo3MxeWbsQB1881ox0cRv7UPTgBlriqoynt35KjEwgGUeUXIPnw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    /> -->
+    <!-- <link
+      rel="preload"
+      as="style"
+      type="text/css"
+      onload="this.onload=null;this.rel='stylesheet'"
+      href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css"
+      integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js"
+      integrity="sha512-rMGGF4wg1R73ehtnxXBt5mbUfN9JUJwbk21KMlnLZDJh7BkPmeovBuddZCENJddHYYMkCh9hPFnPmS9sspki8g=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script> -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jose/5.9.6/util/decode_jwt.js"
+      integrity="sha512-u8/puuIV5vng7Gj+C03/DbKBleQ1tzyoXLCcei27UWruTdHtkCInqqmRg2WPF7Dmr342A4fC8i5zNqKw2H70pQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+      async
+    ></script>
   </head>
   <body>
     <span id="cached" hidden>
@@ -119,16 +165,10 @@
         </span>
         <span>
           <label for="lists">Lists:</label>
-          <span id="lists">
-            <label>
-              <input type="checkbox" checked disabled />
-              Current
-            </label>
-            <label>
-              <input type="checkbox" id="planning" />
-              Planning
-            </label>
-          </span>
+          <select id="lists" multiple>
+            <option selected>Current</option>
+            <option>Planning</option>
+          </select>
         </span>
         <span>
           <input type="checkbox" checked="true" id="englishTitles" />
@@ -136,14 +176,11 @@
         </span>
         <span>
           <label for="country">Type:</label>
-          <span id="country">
-            <input type="checkbox" id="JP" />
-            <label for="JP">Manga 🇯🇵</label>
-            <input type="checkbox" id="KR" />
-            <label for="KR">Manhwa 🇰🇷</label>
-            <input type="checkbox" id="CN" />
-            <label for="CN">Manhua 🇨🇳</label>
-          </span>
+          <select id="country" data-placeholder="Country of Origin" multiple>
+            <option id="JP">Manga 🇯🇵</option>
+            <option id="KR">Manhwa 🇰🇷</option>
+            <option id="CN">Manhua 🇨🇳</option>
+          </select>
         </span>
         <span>
           <input type="checkbox" checked="true" id="subRecs" />
