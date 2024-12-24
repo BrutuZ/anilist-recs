@@ -56,7 +56,7 @@ body {
   width: fit-content;
 }
 input,
-.anidrop {
+.select2-container {
   background-color: var(--color-bg);
   border-radius: 5px;
   color: var(--color-text);
@@ -82,17 +82,24 @@ button {
 }
 
 /* SELECTS */
-.select2-container--default .sc {
+span.select2-container--default span.selection span.select2-selection {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-size: smaller;
   text-align: start;
 }
-.select2-container--default .sc .select2-selection__rendered {
+span.select2-container--default
+  span.selection
+  span.select2-selection
+  span.select2-selection__rendered {
   color: var(--color-text);
 }
-.select2-container--default .select2-results__option--highlighted[aria-selected] {
+.select2-container--default
+  .select2-results__option.select2-results__option--highlighted[aria-selected] {
   background-color: var(--color-button-bg);
+}
+.select2-container--default .select2-results__option[aria-selected] {
+  background-color: var(--color-bg);
 }
 .select2-container--default .select2-results__option[aria-selected='true'] {
   background-color: var(--color-fg);
@@ -101,6 +108,13 @@ button {
   cursor: pointer;
   min-width: 6em;
   padding-right: 20px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+  background-color: var(--color-button-bg);
+  color: var(--color-tag-text);
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+  color: var(--color-button-text);
 }
 .select2-search__field {
   display: none;
@@ -283,7 +297,7 @@ img {
 @media only screen and (max-width: 961px) {
   .settings,
   input,
-  .anidrop,
+  .select2-container,
   button {
     font-size: 0.75rem;
   }

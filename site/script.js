@@ -442,8 +442,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Style Selects
   $('select').select2({
-    containerCssClass: 'sc',
-    dropdownCssClass: 'sc',
     minimumResultsForSearch: -1,
     width: 'style',
   });
