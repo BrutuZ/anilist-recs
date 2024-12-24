@@ -445,6 +445,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     containerCssClass: 'sc',
     dropdownCssClass: 'sc',
     minimumResultsForSearch: -1,
+    width: 'style',
   });
 });
 

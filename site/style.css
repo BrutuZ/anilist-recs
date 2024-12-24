@@ -99,10 +99,22 @@ button {
 }
 .select2-container--default .select2-selection--multiple {
   cursor: pointer;
+  min-width: 6em;
+  padding-right: 20px;
 }
 .select2-search__field {
   display: none;
 }
+.select2-selection--multiple:before {
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #888;
+  content: '';
+  position: absolute;
+  right: 7px;
+  top: 42%;
+}
+
 /* CONTAINER */
 .container {
   left: 10%;
