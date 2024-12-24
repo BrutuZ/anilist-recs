@@ -1,4 +1,4 @@
-import { deleteOldCaches, getData } from './modules/caching';
+import { deleteOldCaches, getData } from './modules/caching.js';
 
 DEV: new EventSource('/esbuild').addEventListener('change', e => {
   const { added, removed, updated } = JSON.parse(e.data);

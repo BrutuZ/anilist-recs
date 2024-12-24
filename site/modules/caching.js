@@ -1,4 +1,4 @@
-import { qe, apiUrl, message } from '../script';
+import { qe, apiUrl, message } from '../script.js';
 
 const cacheBaseName = 'MangaRecs';
 // Try to get data from the cache, but fall back to fetching it live.
