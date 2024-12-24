@@ -148,8 +148,8 @@
         <span>
           <label for="lists">Lists:</label>
           <select id="lists" multiple>
-            <option selected>Current</option>
-            <option>Planning</option>
+            <option value="CURRENT" selected>Current</option>
+            <option value="PLANNING">Planning</option>
           </select>
         </span>
         <span>
@@ -158,10 +158,10 @@
         </span>
         <span>
           <label for="country">Type:</label>
-          <select id="country" data-placeholder="Country of Origin" multiple>
-            <option id="JP">Manga 🇯🇵</option>
-            <option id="KR">Manhwa 🇰🇷</option>
-            <option id="CN">Manhua 🇨🇳</option>
+          <select id="country" data-placeholder="Any" multiple>
+            <option value="JP" selected>🇯🇵 Manga</option>
+            <option value="KR" selected>🇰🇷 Manhwa</option>
+            <option value="CN" selected>🇨🇳 Manhua</option>
           </select>
         </span>
         <span>

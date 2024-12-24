@@ -100,10 +100,10 @@ async function* fetchData(onList = false) {
         );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
-    const recsQuery = `${queryStart} status_in: [${settings.lists?.join().toUpperCase()}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
+    const recsQuery = `${queryStart} status_in: [${settings.lists?.join()}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
     console.log('Fetching chunk', chunk);
     apiUrl.search = '';
-    apiUrl.searchParams.set(user[0], user[1].split('"')[1]);
+    apiUrl.searchParams.set(user[0], user[1].replace(/^"|"$/g, ''));
     apiUrl.searchParams.set('page', chunk);
     if (!onList) {
       apiUrl.searchParams.set('subRecs', settings.subRecs);
@@ -491,12 +491,6 @@ function settingsSave() {
     switch (el.type) {
       case 'checkbox':
         savedSettings[el.id] = el.checked;
-        break;
-      case 'select-multiple':
-        savedSettings[el.id] = $(el)
-          .find('option:selected')
-          .map((_, option) => option.id || option.value)
-          .get();
         break;
       default:
         savedSettings[el.id] = $(el).val();
