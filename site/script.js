@@ -54,7 +54,7 @@ if (!jwt && location.hash.search('access_token') !== -1) {
   localStorage.setItem('jwt', jwt);
   url.search = '';
   history.replaceState(null, '', url.toString());
-  message('Authenticated with AniList', '(⌐■_■)');
+  message('(⌐■_■)', 'Authenticated with AniList');
 }
 
 function validateUser() {
@@ -63,6 +63,7 @@ function validateUser() {
     if (jwt) return ['userId', decodeJwt(jwt).sub];
     else {
       message(
+        '( •_•)>⌐■-■',
         '<a href="https://anilist.co/api/v2/oauth/authorize?client_id=9655&response_type=token">Authenticate with AniList</a>',
         'to see Private Profile / Entries'
       );
@@ -96,12 +97,11 @@ async function* fetchData(onList = false) {
   if (settings.private) headers['Authorization'] = `Bearer ${jwt}`;
   for (let chunk = 1; chunk < 21; chunk++) {
     onList
-      ? message('Stalking your profile', '(⓿_⓿)', `Page ${chunk}`)
+      ? message('(⓿_⓿)', 'Stalking your profile ' + '.'.repeat(chunk - 1))
       : message(
-          'Digging Recommentations...',
-          '(This may take a while)',
-          '(∪.∪ )...zzz',
-          `Page ${chunk}`
+          '(∪.∪ )...<sup>z</sup>z<sup>z</sup>ᶻ',
+          'Digging Recommentations ' + '.'.repeat(chunk - 1),
+          '(This may take a while)'
         );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
