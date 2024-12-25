@@ -109,13 +109,11 @@ async function* fetchData(onList = false) {
     console.log('Fetching chunk', chunk);
     apiUrl.search = '';
     apiUrl.searchParams.set(user[0], user[1].replace(/^"|"$/g, ''));
-    apiUrl.searchParams.set('page', chunk);
     if (!onList) {
-      apiUrl.searchParams.set('subRecs', settings.subRecs);
       apiUrl.searchParams.set('lists', settings.lists?.join());
+      apiUrl.searchParams.set('subRecs', settings.subRecs);
     }
-    apiUrl.search = btoa(apiUrl.search.slice(1));
-    DEV: apiUrl.search = atob(apiUrl.search.slice(1));
+    apiUrl.searchParams.set('page', chunk);
     const response = DEV
       ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(body => body.json())
       : await getData({
