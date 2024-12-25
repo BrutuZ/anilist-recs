@@ -20,7 +20,7 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
-export const qe = document.querySelector.bind(document);
+const qe = document.querySelector.bind(document);
 const qa = document.querySelectorAll.bind(document);
 const ce = document.createElement.bind(document);
 export const apiUrl = new URL('https://graphql.anilist.co');

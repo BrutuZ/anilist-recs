@@ -1,4 +1,4 @@
-import { qe, apiUrl, message } from '../script.js';
+import { apiUrl, message } from '../script.js';
 
 const cacheBaseName = 'MangaRecs';
 // Try to get data from the cache, but fall back to fetching it live.
@@ -7,7 +7,7 @@ export async function getData(options = {}) {
   await deleteOldCaches(cacheName);
   let cachedData = await getCachedData(cacheName);
 
-  qe('#cached').hidden = !Boolean(cachedData);
+  $('#cached').prop('hidden', !Boolean(cachedData));
   if (cachedData) {
     console.log('Retrieved cached data', apiUrl.search.slice(1));
     const cacheCountdown = new Date(
@@ -17,7 +17,7 @@ export async function getData(options = {}) {
       .slice(11, 16)
       .replace('00:', '')
       .replace(':', 'h ');
-    qe('#cached > p').textContent = `${cacheCountdown}m`;
+    $('#cached > p').text(`${cacheCountdown}m`);
     return cachedData;
   }
 
