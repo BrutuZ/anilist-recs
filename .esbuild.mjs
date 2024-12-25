@@ -15,7 +15,7 @@ const build = await esbuild.context({
   bundle: true,
   outbase: 'site',
   outdir: 'build',
-  format: 'iife',
+  format: 'esm',
   globalName: 'script',
   loader: {
     '.html': 'copy',
@@ -28,6 +28,8 @@ const build = await esbuild.context({
     '.xml': 'copy',
   },
   platform: 'browser',
+  packages: 'external',
+  alias: { jose: 'https://cdnjs.cloudflare.com/ajax/libs/jose/5.9.6/util/decode_jwt.js' },
 });
 
 if (productionMode) {

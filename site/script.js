@@ -1,4 +1,5 @@
 import { deleteOldCaches, getData } from './modules/caching.js';
+import { decodeJwt } from 'jose';
 
 DEV: new EventSource('/esbuild').addEventListener('change', e => {
   const { added, removed, updated } = JSON.parse(e.data);
@@ -43,7 +44,7 @@ deleteOldCaches(); // Clear expired cache
 
 // vvv AUTHENTICATION vvv
 // Check if authentication is saved and clear if expired
-if (jwt && Number(jose.decodeJwt(jwt).exp) * 1000 < Date.now()) jwt = null;
+if (jwt && Number(decodeJwt(jwt).exp) * 1000 < Date.now()) jwt = null;
 // Save authentication from AniList redirect and clear the URL afterwards
 if (!jwt && location.hash.search('access_token') !== -1) {
   const url = new URL(location);
@@ -59,7 +60,7 @@ if (!jwt && location.hash.search('access_token') !== -1) {
 function validateUser() {
   if (DEV) return ['', ''];
   if (settings.private || qe('#private').checked) {
-    if (jwt) return ['userId', jose.decodeJwt(jwt).sub];
+    if (jwt) return ['userId', decodeJwt(jwt).sub];
     else {
       message(
         '<a href="https://anilist.co/api/v2/oauth/authorize?client_id=9655&response_type=token">Authenticate with AniList</a>',
