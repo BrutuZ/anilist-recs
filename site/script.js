@@ -493,7 +493,7 @@ function settingsSave() {
     if (!el.id) return;
     switch (el.type) {
       case 'checkbox':
-        savedSettings[el.id] = el.checked;
+        savedSettings[el.id] = Number(el.checked);
         break;
       default:
         savedSettings[el.id] = $(el).val();
