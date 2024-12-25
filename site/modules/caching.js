@@ -44,11 +44,18 @@ export async function getData(options = {}) {
 
 async function getCachedData(cacheName = cacheBaseName) {
   const cacheStorage = await caches.open(cacheName);
-  return await cacheStorage.match(apiUrl, {
+  const options = {
     ignoreSearch: false,
     ignoreMethod: true,
     ignoreVary: true,
-  });
+  };
+  let cachedData = await cacheStorage.match(apiUrl, options);
+  if (!cachedData && apiUrl.searchParams.get('subRecs') === '0') {
+    apiUrl.searchParams.set('subRecs', '1');
+    cachedData = await cacheStorage.match(apiUrl, options);
+    if (cachedData) console.log('Found cache with extra information. Reduce, Reuse, Recycle!');
+  }
+  return cachedData;
 }
 // Delete any old caches to respect user's disk space.
 export async function deleteOldCaches(cacheName = cacheBaseName) {
