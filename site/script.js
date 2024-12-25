@@ -80,6 +80,10 @@ function validateUser() {
 
 async function* fetchData(onList = false) {
   settingsSave();
+  if (!settings.lists.length) {
+    message('(ㆆ_ㆆ)', 'Select at least one list, BAKA!');
+    throw new Error('No lists selected');
+  }
   const user = validateUser();
   let perChunk = 500; // onList ? 500 : 100;
   DEV: perChunk = 5;
