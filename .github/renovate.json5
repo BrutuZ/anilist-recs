@@ -4,10 +4,10 @@
     "config:recommended",
     "default:automergeBranchPush",
     "group:all",
-    ":automergeBranch",
-    ":automergeMinor",
-    ":automergeDigest",
+    "schedule:automergeEarlyMondays",
   ],
+  "automerge": true,
+  "automergeType": "branch",
   "labels": ["Dependency"],
   "minimumReleaseAge": "1 week",
   "packageRules": [
@@ -18,4 +18,9 @@
       "minimumReleaseAge": "1 week",
     }
   ],
+  "cdnurl": {
+    "fileMatch": [
+      "^\\.esbuild\\.mjs$"
+    ]
+  },
 }
