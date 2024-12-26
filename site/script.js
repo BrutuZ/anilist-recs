@@ -489,7 +489,7 @@ function cleanTagPrompt() {
 function settingsLoad() {
   const savedSettings = JSON.parse(localStorage.getItem('settings') || '{}');
   $.each(savedSettings, (key, value) => {
-    switch ($(key).prop('type')) {
+    switch ($('#' + key).prop('type')) {
       case 'checkbox':
         $('#' + key).prop('checked', value);
         break;
