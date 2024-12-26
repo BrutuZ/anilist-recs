@@ -348,6 +348,7 @@ function drawRec(rec) {
       .attr({
         href: ignore.includes(origin.id) ? origin.url : '#' + origin.id,
         target: ignore.includes(origin.id) ? '_blank' : '_self',
+        'data-id': origin.id,
       })
       .append(
         img
@@ -364,6 +365,7 @@ function drawRec(rec) {
   textContainer.append(
     link
       .empty()
+      .removeAttr('data-id')
       .attr({ href: '#' + rec.id, target: '_self' })
       .append(
         $('<h3>', {
@@ -422,6 +424,10 @@ function drawRec(rec) {
             localStorage.setItem('ignored', userIgnored);
             console.log('Ignored', title);
             entry.remove();
+            $(`[data-id='${rec.id}']`).each((_, e) => {
+              $(e).siblings().length ? $(e).remove() : $(e).closest('.entry').remove();
+            });
+            recsCounter();
           },
         },
       }),
