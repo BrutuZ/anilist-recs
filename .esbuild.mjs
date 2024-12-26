@@ -11,13 +11,7 @@ const build = await esbuild.context({
   dropLabels: productionMode ? ['DEV'] : [],
   minify: productionMode,
   sourcemap: !productionMode,
-  entryPoints: productionMode
-    ? ['site/*']
-    : [
-        'site/*',
-        'manga*.json',
-        // 'node_modules/select2/dist/css/select2.css'
-      ],
+  entryPoints: productionMode ? ['site/*'] : ['site/*', 'manga*.json'],
   bundle: true,
   outbase: 'site',
   outdir: 'build',
@@ -34,13 +28,11 @@ const build = await esbuild.context({
     '.xml': 'copy',
   },
   platform: 'browser',
-  external: ['_.._/*'],
   alias: {
     jose: productionMode
       ? 'https://cdnjs.cloudflare.com/ajax/libs/jose/5.9.6/util/decode_jwt.js'
       : 'jose',
-    select2css: 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css',
-    // : '_.._/node_modules/select2/dist/css/select2.css',
+    select2css: 'node_modules/select2/dist/css/select2.css',
   },
 });
 
