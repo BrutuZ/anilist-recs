@@ -7,7 +7,7 @@ const productionMode = 'development' !== (argv[2] || process.env.NODE_ENV);
 
 const build = await esbuild.context({
   define: { DEV: String(!productionMode) },
-  // drop: productionMode ? ['console'] : [],
+  drop: productionMode ? ['console'] : [],
   dropLabels: productionMode ? ['DEV'] : [],
   minify: productionMode,
   sourcemap: !productionMode,
