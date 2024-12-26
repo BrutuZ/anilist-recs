@@ -426,7 +426,6 @@ function drawRec(rec) {
   cell.appendChild(textContainer);
   cell.classList.add('details');
   entry.appendChild(cell);
-  cell.removeAttribute('class');
 
   const ignoreButton = ce('span');
   ignoreButton.innerText = '×';
