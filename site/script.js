@@ -91,7 +91,7 @@ async function* fetchData(onList = false) {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   };
-  if (settings.private) headers['Authorization'] = `Bearer ${jwt}`;
+  if (settings.private) headers['Authorization'] = 'Bearer ' + jwt;
   for (let chunk = 1; chunk < 21; chunk++) {
     onList
       ? message('(⓿_⓿)', 'Stalking your profile ' + '.'.repeat(chunk - 1))
@@ -122,7 +122,7 @@ async function* fetchData(onList = false) {
           }),
         }).then(body => (body ? body.json() : body));
     if (!response) {
-      console.log(`Error fetching ${apiUrl.search}`);
+      console.log('Error fetching', apiUrl.search);
       return false;
     }
     yield await Promise.resolve(
@@ -223,7 +223,7 @@ async function parseData() {
 function recsCounter() {
   $('.header')
     .empty()
-    .text(`${$('.content > .entry:visible').length} Recommendations`);
+    .text($('.content > .entry:visible').length + ' Recommendations');
 }
 
 function filterTag(ev) {
@@ -244,7 +244,7 @@ function filterTag(ev) {
     return false;
   }
   // Draw prompt otherwise
-  $(DIV, { id: 'tag-filter', css: { top: `${ev.pageY}px`, left: `${ev.pageX}px` } })
+  $(DIV, { id: 'tag-filter', css: { top: ev.pageY + 'px', left: ev.pageX + 'px' } })
     .append($(SPAN, { text: '✅', on: { click: () => doTagFilter(this, false) } }))
     .append($(SPAN, { text: '❌', on: { click: () => doTagFilter(this, true) } }))
     .appendTo($('body'));
@@ -298,7 +298,7 @@ function appendTag(tag) {
   const classes = blTags.includes(tag) ? ' rejected' : wlTags.includes(tag) ? ' filtered' : '';
   $(DIV, {
     attr: { 'data-tag': tag },
-    class: `tag${classes}`,
+    class: 'tag' + classes,
     text: tag,
     on: { click: filterTag },
   }).appendTo(this);
@@ -369,7 +369,7 @@ function drawRec(rec) {
       .attr({ href: '#' + rec.id, target: '_self' })
       .append(
         $('<h3>', {
-          text: rec.isAdult ? '🔞' : '' + flags[rec.countryOfOrigin] + ` ${title}`,
+          text: rec.isAdult ? '🔞' : '' + flags[rec.countryOfOrigin] + ' ' + title,
           class: settings.englishTitles && rec.title.english ? 'licensed' : '',
         })
       )
@@ -385,7 +385,13 @@ function drawRec(rec) {
   ]
     .filter(i => (i && i != title ? i : false))
     .join('<br />• ');
-  if (altTitles) textContainer.append(text.empty().append(`• ${altTitles}`).clone());
+  if (altTitles)
+    textContainer.append(
+      text
+        .empty()
+        .append('• ' + altTitles)
+        .clone()
+    );
   cell.empty().attr('class', 'alt-titles').append(textContainer.clone());
 
   entry.append(cell.clone());
@@ -485,10 +491,12 @@ function settingsLoad() {
   $.each(savedSettings, (key, value) => {
     switch ($(key).prop('type')) {
       case 'checkbox':
-        $(`#${key}`).prop('checked', value);
+        $('#' + key).prop('checked', value);
         break;
       default:
-        $(`#${key}`).val(value).trigger('change');
+        $('#' + key)
+          .val(value)
+          .trigger('change');
         break;
     }
   });
