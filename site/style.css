@@ -237,6 +237,11 @@ img {
   display: none;
   grid-area: alt-titles;
 }
+.title a,
+.titles a {
+  color: (var(--color-text));
+  text-decoration: none;
+}
 .title h3,
 .titles h3 {
   font-weight: 400;

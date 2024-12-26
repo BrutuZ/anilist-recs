@@ -20,14 +20,15 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
-const ce = document.createElement.bind(document);
-export const apiUrl = new URL('https://graphql.anilist.co');
-const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
-const statusMap = {
-  Ongoing: ['RELEASING', 'HIATUS'],
-  Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
-};
-export var data = [],
+const DIV = '<div>',
+  SPAN = '<span>',
+  flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' },
+  statusMap = {
+    Ongoing: ['RELEASING', 'HIATUS'],
+    Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
+  };
+export const apiUrl = new URL('https://graphql.anilist.co'),
+  data = [],
   wlTags = [],
   blTags = [],
   userIgnored = [],
@@ -150,6 +151,7 @@ function parseRecs(manga) {
     )
       return;
     const recObj = {
+      id: manga.id,
       cover: manga.cover.medium,
       title: manga.title.english || manga.title.romaji,
       url: manga.url,
@@ -171,14 +173,13 @@ function parseRecs(manga) {
 
 async function parseData() {
   settings = settingsSave();
-  console.log('Nothing to ignore!');
-  ignore = [...userIgnored];
+  ignore.length = 0;
+  ignore.push(...userIgnored);
   for await (const chunk of fetchData(true)) ignore.push(...chunk);
   console.log('Ignored entries:', ignore);
-  console.log('Nothing to parse!');
   for await (const chunk of fetchData(false)) data.push(...chunk);
   console.log('Reading list:', data);
-  recs = [];
+  recs.length = 0;
 
   console.log('Parsing Recomendations...');
   data.forEach(manga => parseRecs(manga));
@@ -228,7 +229,7 @@ function recsCounter() {
 function filterTag(ev) {
   ev.preventDefault();
   console.log('Clicked Tag', this, ev);
-  $('#tag-filter').remove(); // Clean vestigial prompts
+  cleanTagPrompt();
   const tagName = this.dataset.tag;
 
   // Check if Tag is already active
@@ -243,27 +244,15 @@ function filterTag(ev) {
     return false;
   }
   // Draw prompt otherwise
-  const buttons = $(ce('div'))
-    .attr({ id: 'tag-filter' })
-    .css({ top: `${ev.pageY}px`, left: `${ev.pageX}px` });
-
-  buttons.append(
-    $(ce('span'))
-      .text('✅')
-      .on('click', () => doTagFilter(this, false))
-  );
-  buttons.append(
-    $(ce('span'))
-      .text('❌')
-      .on('click', () => doTagFilter(this, true))
-  );
-  buttons.appendTo($('body'));
+  $(DIV, { id: 'tag-filter', css: { top: `${ev.pageY}px`, left: `${ev.pageX}px` } })
+    .append($(SPAN, { text: '✅', on: { click: () => doTagFilter(this, false) } }))
+    .append($(SPAN, { text: '❌', on: { click: () => doTagFilter(this, true) } }))
+    .appendTo($('body'));
   return false;
 
   function doTagFilter(element = undefined, blacklist = false) {
     ev.stopImmediatePropagation();
-    console.log('Filtering', tagName, blacklist, element, this);
-    $('#tag-filter').remove(); // Clean vestigial prompts
+    cleanTagPrompt();
     // Pick list mode
     const tagList = blacklist ? blTags : wlTags;
     const listType = blacklist ? 'blacklist' : 'whitelist';
@@ -307,138 +296,137 @@ function isFiltered(tags) {
 
 function appendTag(tag) {
   const classes = blTags.includes(tag) ? ' rejected' : wlTags.includes(tag) ? ' filtered' : '';
-  $(ce('div'))
-    .attr({ 'data-tag': tag })
-    .addClass(`tag${classes}`)
-    .text(tag)
-    .appendTo(this)
-    .on('click', filterTag);
+  $(DIV, {
+    attr: { 'data-tag': tag },
+    class: `tag${classes}`,
+    text: tag,
+    on: { click: filterTag },
+  }).appendTo(this);
+  // .on('click', filterTag);
 }
 
 function drawRec(rec) {
-  const entry = ce('div');
-  const cell = ce('div');
-  const text = ce('p');
+  const entry = $(DIV, {
+    id: rec.id,
+    hidden: isFiltered(rec.tags.map(t => t.name)),
+    class: 'entry',
+  });
+  const cell = $(DIV);
 
-  const link = ce('a');
-  const img = ce('img');
-
-  entry.classList.add('entry');
-  entry.id = `id-${rec.id}`;
-  entry.hidden = isFiltered(rec.tags.map(t => t.name));
+  const link = $('<a>', { target: '_blank', href: rec.url });
+  const img = $('<img>', {
+    loading: 'lazy',
+    crossorigin: 'anonymous',
+    referrerpolicy: 'no-referrer',
+    attr: { width: '250px' },
+    src: rec.cover.large,
+  });
 
   // COVER + URL
-  link.target = '_blank';
-  link.href = rec.url;
 
-  img.width = 250;
-  img.loading = 'lazy';
-  img.src = rec.cover.large;
+  link.append(img.clone());
+  const text = $('<p>', {
+    text: [
+      rec.status ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase() : 'Unknown Status',
+      rec.chapters ? `[${rec.chapters}]` : '',
+      rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔',
+      rec.meanScore + '%',
+    ].join(' '),
+  });
 
-  link.appendChild(img.cloneNode(true));
+  link.append(text.clone());
 
-  rec.status = rec.status
-    ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase()
-    : 'Unknown Status';
-  text.textContent = `${rec.status} ${rec.chapters ? `[${rec.chapters}] ` : ''}${rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔'}${rec.meanScore}%`;
-  link.appendChild(text.cloneNode(true));
-
-  cell.appendChild(link.cloneNode(true));
-  cell.classList.add('cover');
-  entry.appendChild(cell.cloneNode(true));
-  cell.removeAttribute('class');
+  cell.attr('class', 'cover').append(link.clone());
+  entry.append(cell.clone());
 
   // CONNECTIONS
-  cell.innerHTML = '';
-  cell.classList.add('recs');
-  img.width = 75;
+  cell.empty().attr('class', 'recs');
   rec.recommended.forEach(origin => {
     if ($(cell).find(`img[src="${origin.cover}"]`).length > 0) return;
-    link.innerHTML = '';
-    link.target = '_blank';
-    link.href = origin.url;
-    img.src = origin.cover;
-    img.title = origin.title;
-    img.alt = origin.title;
-    link.appendChild(img.cloneNode(true));
-    cell.appendChild(link.cloneNode(true));
+    link
+      .empty()
+      .attr({
+        href: ignore.includes(origin.id) ? origin.url : '#' + origin.id,
+        target: ignore.includes(origin.id) ? '_blank' : '_self',
+      })
+      .append(
+        img
+          .attr({ width: '75px', src: origin.cover, title: origin.title, alt: origin.title })
+          .clone()
+      );
+    cell.append(link.clone());
   });
-  entry.appendChild(cell.cloneNode(true));
-  cell.removeAttribute('class');
+  entry.append(cell.clone());
 
   // TITLE (PORTRAIT)
-  cell.innerHTML = '';
-  const textContainer = ce('div');
-  const header = ce('h3');
+  const textContainer = $(DIV);
   const title = settings.englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
-  header.textContent = `${rec.isAdult ? '🔞' : ''}${flags[rec.countryOfOrigin]} ${title}`;
-  if (settings.englishTitles && rec.title.english) header.classList.add('licensed');
-  textContainer.appendChild(header);
-  cell.appendChild(textContainer.cloneNode(true));
+  textContainer.append(
+    link
+      .empty()
+      .attr({ href: '#' + rec.id, target: '_self' })
+      .append(
+        $('<h3>', {
+          text: rec.isAdult ? '🔞' : '' + flags[rec.countryOfOrigin] + ` ${title}`,
+          class: settings.englishTitles && rec.title.english ? 'licensed' : '',
+        })
+      )
+  );
+  cell.empty().attr('class', 'title').append(textContainer.clone());
 
-  cell.classList.add('title');
-  entry.appendChild(cell.cloneNode(true));
-  cell.removeAttribute('class');
+  entry.append(cell.clone());
 
   // ALT. TITLES (PORTRAIT)
-  cell.innerHTML = '';
-  textContainer.innerHTML = '';
+  textContainer.empty();
   const altTitles = [
     ...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native]),
   ]
     .filter(i => (i && i != title ? i : false))
-    .join('\n• ');
-  if (altTitles) {
-    text.innerText = `• ${altTitles}`;
-    textContainer.appendChild(text.cloneNode(true));
-  }
-  cell.appendChild(textContainer.cloneNode(true));
+    .join('<br />• ');
+  if (altTitles) textContainer.append(text.empty().append(`• ${altTitles}`).clone());
+  cell.empty().attr('class', 'alt-titles').append(textContainer.clone());
 
-  cell.classList.add('alt-titles');
-  entry.appendChild(cell.cloneNode(true));
-  cell.removeAttribute('class');
+  entry.append(cell.clone());
 
   // TITLES FOR LANDSCAPE
-  cell.innerHTML = '';
-  textContainer.innerHTML = '';
-  entry
-    .querySelectorAll('.title h3, .alt-titles p')
-    .forEach(node => textContainer.appendChild(node.cloneNode(true)));
-  cell.appendChild(textContainer.cloneNode(true));
+  textContainer.empty().append(entry.find('.title a, .alt-titles p').clone());
+  cell.empty().attr('class', 'titles').append(textContainer.clone());
 
-  cell.classList.add('titles');
-  entry.appendChild(cell.cloneNode(true));
-  cell.removeAttribute('class');
+  entry.append(cell.clone());
 
   // DESCRIPTION
-  cell.innerHTML = '';
-  textContainer.innerHTML = '';
-  text.innerHTML = rec.description || '<i>&lt;Empty Description&gt;</i>';
-  textContainer.appendChild(text.cloneNode(true));
+  textContainer.empty().append(
+    text
+      .empty()
+      .append(rec.description || '<i>&lt;Empty Description&gt;</i>')
+      .clone()
+  );
 
-  const tags = $(ce('span')).addClass('tags');
+  const tags = $(SPAN, { style: 'tags' });
   rec.tags
     ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
     .map(tag => tag.name)
     .forEach(appendTag, tags);
   if (tags.children()) tags.appendTo(textContainer);
 
-  cell.appendChild(textContainer);
-  cell.classList.add('details');
-  entry.appendChild(cell);
-
-  const ignoreButton = ce('span');
-  ignoreButton.innerText = '×';
-  ignoreButton.className = 'ignore';
-  ignoreButton.addEventListener('click', () => {
-    ignore.push(rec.id);
-    userIgnored.push(rec.id);
-    localStorage.setItem('ignored', userIgnored);
-    console.log('Ignored', title);
-    entry.remove();
-  });
-  entry.appendChild(ignoreButton);
-  $('.content').append(entry);
+  $('.content').append(
+    entry.append([
+      cell.empty().attr('class', 'details').append(textContainer),
+      $(SPAN, {
+        text: '×',
+        class: 'ignore',
+        on: {
+          click: () => {
+            ignore.push(rec.id);
+            userIgnored.push(rec.id);
+            localStorage.setItem('ignored', userIgnored);
+            console.log('Ignored', title);
+            entry.remove();
+          },
+        },
+      }),
+    ])
+  );
 }
 
 $(async () => {
@@ -470,11 +458,11 @@ $(async () => {
 });
 
 function scrollHandler() {
-  $('#top').prop('hidden ', scrollY < visualViewport.height * 1.1);
-  if ($('.settings').get(0).getBoundingClientRect().top < 0)
-    $('#active-tags').css('position', 'fixed');
-  else $('#active-tags').removeAttr('style');
-  $('#tag-filter').remove();
+  $('#top').prop('hidden', scrollY < visualViewport.height * 1.1);
+  $('.settings').get(0).getBoundingClientRect().top < 0
+    ? $('#active-tags').css('position', 'fixed')
+    : $('#active-tags').removeAttr('style');
+  cleanTagPrompt();
 
   // TODO:
   // if (lastEntry && scrollY > lastEntry.offsetTop) {
@@ -483,7 +471,9 @@ function scrollHandler() {
   //   // lastEntry = document.querySelector('.entry:nth-last-child(2)');
   // }
 }
-
+function cleanTagPrompt() {
+  $('#tag-filter').remove();
+}
 function settingsLoad() {
   const savedSettings = JSON.parse(localStorage.getItem('settings') || '{}');
   $.each(savedSettings, (key, value) => {
@@ -500,8 +490,8 @@ function settingsLoad() {
     hidden: $('#private').prop('checked'),
     disabled: $('#private').prop('checked'),
   });
-  wlTags = localStorage.getItem('whitelist')?.split(',') || [];
-  blTags = localStorage.getItem('blacklist')?.split(',') || [];
+  wlTags.push(...(localStorage.getItem('whitelist')?.split(',') || []));
+  blTags.push(...(localStorage.getItem('blacklist')?.split(',') || []));
   $('#active-tags').empty();
   [...wlTags, ...blTags].forEach(appendTag, $('#active-tags'));
   console.log('Read settings:', savedSettings);
