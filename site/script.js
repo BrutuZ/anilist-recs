@@ -20,12 +20,8 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
-const qe = document.querySelector.bind(document);
-const qa = document.querySelectorAll.bind(document);
 const ce = document.createElement.bind(document);
 export const apiUrl = new URL('https://graphql.anilist.co');
-const table = qe('.content');
-const statusSelect = qe('#status');
 const flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' };
 const statusMap = {
   Ongoing: ['RELEASING', 'HIATUS'],
@@ -59,7 +55,7 @@ if (!jwt && location.hash.search('access_token') !== -1) {
 
 function validateUser() {
   if (DEV) return ['', ''];
-  if (settings.private || qe('#private').checked) {
+  if (settings.private || $('#private').prop('checked')) {
     if (jwt) return ['userId', decodeJwt(jwt).sub];
     else {
       message(
@@ -70,10 +66,10 @@ function validateUser() {
       throw new Error('Unauthenticated');
     }
   } else {
-    if (!settings.username || !qe('#username').value) {
+    if (!settings.username || !$('#username').val()) {
       message('╰(￣ω￣ｏ)', 'Fill your username');
       throw new Error('No username');
-    } else return ['userName', `"${settings.username || qe('#username').value}"`];
+    } else return ['userName', `"${settings.username || $('#username').val()}"`];
   }
 }
 
@@ -146,10 +142,10 @@ function parseRecs(manga) {
     if (
       !rec ||
       ignore.includes(rec.id) ||
-      rec.isAdult == qe('#adult').selectedIndex ||
-      rec.meanScore < qe('#minScore').value ||
+      rec.isAdult == $('#adult').prop('selectedIndex') ||
+      rec.meanScore < $('#minScore').val() ||
       (settings.country.length > 0 && !settings.country?.includes(rec.countryOfOrigin)) ||
-      (statusSelect.selectedIndex && !statusMap[statusSelect.value]?.includes(rec.status))
+      ($('#status').prop('selectedIndex') && !statusMap[$('#status').val()]?.includes(rec.status))
       // || e.rating < 1
     )
       return;
@@ -190,7 +186,6 @@ async function parseData() {
   message();
 
   console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
-  qe('.header').innerHTML = `${recs.length} Recommendations`;
   recs
     .sort((a, b) => {
       switch (settings.sortMode) {
@@ -220,76 +215,104 @@ async function parseData() {
       }
     })
     .forEach(drawRec);
-  // I hate this so much
-  qa('.tag').forEach(tagContainer => tagContainer.addEventListener('click', filterTag, false));
+  recsCounter();
   console.log('Parsed!');
 }
 
+function recsCounter() {
+  $('.header')
+    .empty()
+    .text(`${$('.content > .entry:visible').length} Recommendations`);
+}
+
 function filterTag(ev) {
-  console.log(this, ev);
   ev.preventDefault();
-  qa('#tag-filter').forEach(i => i.remove());
+  console.log('Clicked Tag', this, ev);
+  $('#tag-filter').remove(); // Clean vestigial prompts
   const tagName = this.dataset.tag;
+
+  // Check if Tag is already active
   if (ev.target.classList.contains('rejected')) {
-    doTagFilter(true);
-    return;
+    console.log('De-rejecting tag');
+    doTagFilter(this, true);
+    return false;
   }
   if (ev.target.classList.contains('filtered')) {
-    doTagFilter(false);
-    return;
+    console.log('De-filtering tag');
+    doTagFilter(this, false);
+    return false;
   }
-  const buttons = ce('div');
-  buttons.id = 'tag-filter';
-  buttons.style.top = `${ev.pageY}px`;
-  buttons.style.left = `${ev.pageX}px`;
-  const whiteListBtn = ce('span');
-  whiteListBtn.textContent = '✅';
-  whiteListBtn.addEventListener('click', () => doTagFilter(false, this), false);
-  const blackListBtn = ce('span');
-  blackListBtn.textContent = '❌';
-  blackListBtn.addEventListener('click', () => doTagFilter(true, this), false);
-  buttons.append(whiteListBtn);
-  buttons.append(blackListBtn);
-  document.body.append(buttons);
+  // Draw prompt otherwise
+  const buttons = $(ce('div'))
+    .attr({ id: 'tag-filter' })
+    .css({ top: `${ev.pageY}px`, left: `${ev.pageX}px` });
 
-  function doTagFilter(blacklist = false, element = undefined) {
+  buttons.append(
+    $(ce('span'))
+      .text('✅')
+      .on('click', () => doTagFilter(this, false))
+  );
+  buttons.append(
+    $(ce('span'))
+      .text('❌')
+      .on('click', () => doTagFilter(this, true))
+  );
+  buttons.appendTo($('body'));
+  return false;
+
+  function doTagFilter(element = undefined, blacklist = false) {
+    ev.stopImmediatePropagation();
+    console.log('Filtering', tagName, blacklist, element, this);
+    $('#tag-filter').remove(); // Clean vestigial prompts
+    // Pick list mode
     const tagList = blacklist ? blTags : wlTags;
     const listType = blacklist ? 'blacklist' : 'whitelist';
+
+    // Toggle tag from array
     if (tagList.includes(tagName)) tagList.splice(tagList.indexOf(tagName), 1);
     else tagList.push(tagName);
     tagList.length ? localStorage.setItem(listType, tagList) : localStorage.removeItem(listType);
 
-    qa('.content > .entry').forEach(entry => {
-      const tag = entry.querySelector(`[data-tag="${tagName}"]`);
-      const tags = Array.from(entry.querySelectorAll('.tag')).map(t => t.dataset.tag);
-      entry.hidden = blTags?.some(t => tags.includes(t)) || !wlTags?.every(t => tags.includes(t));
-      if (tag) {
-        if (blacklist) tag.classList.toggle('rejected');
-        else tag.classList.toggle('filtered');
-      }
+    // Show/Hide based on array results
+    $('.content > .entry').each((_, entry) => {
+      $(entry)
+        .find(`[data-tag="${tagName}"]`)
+        .toggleClass(blacklist ? 'rejected' : 'filtered');
+      const tags = $(entry)
+        .find('.tag')
+        .map((_, t) => t.dataset.tag)
+        .get();
+      $(entry).prop('hidden', isFiltered(tags));
     });
-    let headerTag = qe(`#active-tags [data-tag="${tagName}"]`);
-    if (headerTag) headerTag.remove();
-    else {
-      headerTag = element?.cloneNode(true);
-      headerTag.addEventListener('click', () => doTagFilter(blacklist, headerTag));
-      qe('#active-tags').appendChild(headerTag);
+
+    // Manage the header list
+    let headerTag = $(`#active-tags [data-tag="${tagName}"]`);
+    if (headerTag.length) {
+      headerTag.first().remove();
+      console.log('Removing header');
+    } else {
+      $('#active-tags').append($(element).clone(true));
+      console.log('Drawing header');
     }
 
-    qa('#tag-filter').forEach(i => i.remove());
+    recsCounter();
+    console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
+    return false;
   }
 }
 
+function isFiltered(tags) {
+  return blTags?.some(b => tags.includes(b)) || !wlTags?.every(w => tags.includes(w));
+}
+
 function appendTag(tag) {
-  const container = ce('div');
-  container.append(tag);
-  container.classList.add('tag');
-  if (blTags.includes(tag)) container.classList.add('rejected');
-  if (wlTags.includes(tag)) container.classList.add('filtered');
-  container.dataset.tag = tag;
-  // Doesn't in the main table for some reason
-  // container.addEventListener('click', filterTag, { capture: true });
-  this.appendChild(container);
+  const classes = blTags.includes(tag) ? ' rejected' : wlTags.includes(tag) ? ' filtered' : '';
+  $(ce('div'))
+    .attr({ 'data-tag': tag })
+    .addClass(`tag${classes}`)
+    .text(tag)
+    .appendTo(this)
+    .on('click', filterTag);
 }
 
 function drawRec(rec) {
@@ -302,9 +325,7 @@ function drawRec(rec) {
 
   entry.classList.add('entry');
   entry.id = `id-${rec.id}`;
-  entry.hidden =
-    blTags.some(b => rec.tags.map(t => t.name).includes(b)) ||
-    !wlTags.every(w => rec.tags.map(t => t.name).includes(w));
+  entry.hidden = isFiltered(rec.tags.map(t => t.name));
 
   // COVER + URL
   link.target = '_blank';
@@ -395,17 +416,16 @@ function drawRec(rec) {
   text.innerHTML = rec.description || '<i>&lt;Empty Description&gt;</i>';
   textContainer.appendChild(text.cloneNode(true));
 
-  const tags = ce('span');
-  tags.classList.add('tags');
+  const tags = $(ce('span')).addClass('tags');
   rec.tags
     ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
     .map(tag => tag.name)
     .forEach(appendTag, tags);
-  if (tags.innerHTML) textContainer.appendChild(tags);
+  if (tags.children()) tags.appendTo(textContainer);
 
-  cell.appendChild(textContainer.cloneNode(true));
+  cell.appendChild(textContainer);
   cell.classList.add('details');
-  entry.appendChild(cell.cloneNode(true));
+  entry.appendChild(cell);
   cell.removeAttribute('class');
 
   const ignoreButton = ce('span');
@@ -419,29 +439,29 @@ function drawRec(rec) {
     entry.remove();
   });
   entry.appendChild(ignoreButton);
-  table.appendChild(entry);
+  $('.content').append(entry);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+$(async () => {
   // Call API from login form
-  qe('#login').addEventListener('submit', async event => {
+  $('#login').on('submit', async event => {
     event.preventDefault();
     await parseData();
   });
 
-  qe('#private').addEventListener('change', e => {
-    qe('#username').disabled = e.target.checked;
-    qe('#username').hidden = false;
+  $('#private').on('change', e => {
+    $('#username').prop('disabled', e.target.checked);
+    $('#username').show();
   });
   // Refilter on settings change
-  qe('#filters').addEventListener('click', async () => await parseData());
+  $('#filters').on('click', async () => await parseData());
   DEV: await parseData();
 
   // Back to Top button
-  qe('#top').addEventListener('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+  $('#top').on('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
 
   // Scroll Handler for Pagination
-  document.addEventListener('scroll', scrollHandler);
+  $(document).on('scroll', scrollHandler);
 
   // Style Selects
   $('select').select2({
@@ -451,11 +471,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function scrollHandler() {
-  qe('#top').hidden = scrollY < visualViewport.height * 1.1;
-  if (qe('.settings').getBoundingClientRect().top < 0)
-    qe('#active-tags').style = 'position: fixed;';
-  else qe('#active-tags').removeAttribute('style');
-  qa('#tag-filter').forEach(i => i.remove());
+  $('#top').prop('hidden ', scrollY < visualViewport.height * 1.1);
+  if ($('.settings').get(0).getBoundingClientRect().top < 0)
+    $('#active-tags').css('position', 'fixed');
+  else $('#active-tags').removeAttr('style');
+  $('#tag-filter').remove();
 
   // TODO:
   // if (lastEntry && scrollY > lastEntry.offsetTop) {
@@ -477,11 +497,14 @@ function settingsLoad() {
         break;
     }
   });
-  qe('#username').hidden = qe('#username').disabled = qe('#private').checked;
+  $('#username').prop({
+    hidden: $('#private').prop('checked'),
+    disabled: $('#private').prop('checked'),
+  });
   wlTags = localStorage.getItem('whitelist')?.split(',') || [];
   blTags = localStorage.getItem('blacklist')?.split(',') || [];
-  qe('#active-tags').innerHTML = '';
-  [...wlTags, ...blTags].forEach(appendTag, qe('#active-tags'));
+  $('#active-tags').empty();
+  [...wlTags, ...blTags].forEach(appendTag, $('#active-tags'));
   console.log('Read settings:', savedSettings);
   return savedSettings;
 }
@@ -504,9 +527,13 @@ function settingsSave() {
 }
 
 export function message() {
-  table.innerHTML = arguments.length
-    ? `<h1>${Array.from(arguments)
-        .filter(i => i)
-        .join('<br />')}</h1>`
-    : '';
+  $('.content')
+    .empty()
+    .append(
+      arguments.length
+        ? `<h1>${Array.from(arguments)
+            .filter(i => i)
+            .join('<br />')}</h1>`
+        : ''
+    );
 }
