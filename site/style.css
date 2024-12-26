@@ -96,13 +96,14 @@ span.select2-container--default
 }
 .select2-container--default
   .select2-results__option.select2-results__option--highlighted[aria-selected] {
-  background-color: var(--color-button-bg);
+  background-color: var(--color-fg);
 }
 .select2-container--default .select2-results__option[aria-selected] {
   background-color: var(--color-bg);
 }
 .select2-container--default .select2-results__option[aria-selected='true'] {
-  background-color: var(--color-fg);
+  background-color: var(--color-button-bg);
+  color: var(--color-tag-text);
 }
 .select2-container--default .select2-selection--multiple {
   cursor: pointer;
