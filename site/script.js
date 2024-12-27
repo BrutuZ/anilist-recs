@@ -470,7 +470,7 @@ $(async () => {
 });
 
 function scrollHandler() {
-  $('#top').prop('hidden', scrollY < visualViewport.height * 1.1);
+  $('#top').toggleClass('collapsed', scrollY < visualViewport.height * 1.1);
   $('.settings').get(0).getBoundingClientRect().top < 0
     ? $('#active-tags').css('position', 'fixed')
     : $('#active-tags').removeAttr('style');
