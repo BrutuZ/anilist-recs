@@ -424,8 +424,8 @@ function drawRec(rec: MediaRecommendation, index: number) {
   const linkParams = { target: '_blank', href: rec.url };
   const imgParams = {
     loading: 'lazy',
-    crossorigin: 'anonymous',
-    referrerpolicy: 'no-referrer',
+    crossOrigin: 'anonymous',
+    referrerPolicy: 'no-referrer',
     width: 250,
     src: rec.cover.large,
   };
