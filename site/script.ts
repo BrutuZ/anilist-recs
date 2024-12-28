@@ -9,7 +9,8 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
       const url = new URL(link.href);
 
       if (url.host === location.host && url.pathname === updated[0]) {
-        const next = link.cloneNode();
+        // @ts-ignore
+        const next: HTMLLinkElement = link.cloneNode();
         next.href = updated[0] + '?' + Math.random().toString(36).slice(2);
         next.onload = () => link.remove();
         link.parentNode.insertBefore(next, link.nextSibling);
@@ -20,6 +21,101 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 
   location.reload();
 });
+declare global {
+  var DEV: boolean;
+
+  interface HTMLElement {
+    attrs(attributes: object): HTMLElement;
+  }
+
+  interface MediaListCollection {
+    data: {
+      collection: {
+        hasNextChunk: boolean;
+        statuses: [
+          {
+            status: string;
+            list: ListEntry[];
+          },
+        ];
+      };
+    };
+  }
+  interface ListEntry {
+    manga: Manga;
+  }
+  interface Manga {
+    title: {
+      romaji: string;
+      english: string;
+      native: string;
+    };
+    id: number;
+    url: string;
+    cover: { medium: string };
+    countryOfOrigin: string;
+    isAdult: boolean;
+    recommendations: Recommendation;
+  }
+  interface Recommendation {
+    entries: [
+      {
+        rating: number;
+        mediaRecommendation: MediaRecommendation;
+      },
+    ];
+  }
+  interface MediaRecommendation {
+    title: {
+      romaji: string;
+      english: string;
+      native: string;
+    };
+    synonyms: string[];
+    id: number;
+    url: string;
+    meanScore: number;
+    popularity: number;
+    status: string;
+    tags: Tags[];
+    cover: { medium: string; large: string };
+    description: string;
+    chapters: number | null;
+    countryOfOrigin: string;
+    rating: number;
+    isAdult: boolean;
+    recommendations: Recommendation;
+    recommended: SlimRecommendations[];
+  }
+  interface Tags {
+    name: string;
+    isMediaSpoiler: boolean;
+  }
+  interface SlimRecommendations {
+    id: number;
+    cover: string;
+    title: string;
+    url: string;
+    rating: number;
+  }
+}
+
+HTMLElement.prototype.attrs = function (o) {
+  for (let k in o) {
+    this[k] = o[k];
+  }
+  return this;
+};
+
+function ce(element: string, params?: object): HTMLElement {
+  const e = document.createElement(element);
+  if (params) e.attrs(params);
+  return e;
+}
+
+const qe = document.querySelector.bind(document);
+const qa = document.querySelectorAll.bind(document);
+
 const DIV = '<div>',
   SPAN = '<span>',
   flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' },
@@ -28,12 +124,12 @@ const DIV = '<div>',
     Ended: ['FINISHED', 'CANCELLED', 'NOT_YET_RELEASED'],
   };
 export const apiUrl = new URL('https://graphql.anilist.co'),
-  data = [],
-  wlTags = [],
-  blTags = [],
-  userIgnored = [],
-  recs = [],
-  ignore = [];
+  data: Manga[] = [],
+  wlTags: string[] = [],
+  blTags: string[] = [],
+  userIgnored: number[] = [],
+  recs: MediaRecommendation[] = [],
+  ignore: number[] = [];
 var settings = settingsLoad(),
   // lastEntry = undefined,
   jwt = localStorage.getItem('jwt');
@@ -44,7 +140,7 @@ deleteOldCaches(); // Clear expired cache
 if (jwt && Number(decodeJwt(jwt).exp) * 1000 < Date.now()) jwt = null;
 // Save authentication from AniList redirect and clear the URL afterwards
 if (!jwt && location.hash.search('access_token') !== -1) {
-  const url = new URL(location);
+  const url = new URL(location.href);
   url.search = url.hash.slice(1);
   url.hash = '';
   jwt = url.searchParams.get('access_token');
@@ -83,8 +179,7 @@ async function* fetchData(onList = false) {
     throw new Error('No lists selected');
   }
   const user = validateUser();
-  let perChunk = 500; // onList ? 500 : 100;
-  DEV: perChunk = 5;
+  let perChunk = DEV ? 5 : 500; // onList ? 500 : 100;
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description chapters countryOfOrigin isAdult';
   const headers = {
@@ -96,8 +191,8 @@ async function* fetchData(onList = false) {
     onList
       ? message('(⓿_⓿)', 'Stalking your profile ' + '.'.repeat(chunk - 1))
       : message(
-          '(∪.∪ )...<sup>z</sup>z<sup>z</sup>ᶻ',
-          'Digging Recommentations ' + '.'.repeat(chunk - 1),
+          '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(chunk),
+          'Digging Recommentations',
           '(This may take a while)'
         );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
@@ -110,8 +205,8 @@ async function* fetchData(onList = false) {
       apiUrl.searchParams.set('lists', settings.lists?.join());
       apiUrl.searchParams.set('subRecs', settings.subRecs);
     }
-    apiUrl.searchParams.set('page', chunk);
-    const response = DEV
+    apiUrl.searchParams.set('page', chunk.toString());
+    const response: MediaListCollection = DEV
       ? await fetch(`_.._/manga${onList ? 'list' : 'recs'}.json`).then(body => body.json())
       : await getData({
           method: 'post',
@@ -132,11 +227,11 @@ async function* fetchData(onList = false) {
     );
     console.log('hasNextChunk:', response.data.collection.hasNextChunk);
     if (!response.data.collection.hasNextChunk) break;
-    DEV: break;
+    if (DEV) break;
   }
 }
 
-function parseRecs(manga) {
+function parseRecs(manga: Manga) {
   manga.recommendations.entries.forEach(entry => {
     const rec = entry.mediaRecommendation;
     // APPLY FILTERS
@@ -144,9 +239,10 @@ function parseRecs(manga) {
       !rec ||
       ignore.includes(rec.id) ||
       rec.isAdult == $('#adult').prop('selectedIndex') ||
-      rec.meanScore < $('#minScore').val() ||
+      rec.meanScore < Number($('#minScore').val()) ||
       (settings.country.length > 0 && !settings.country?.includes(rec.countryOfOrigin)) ||
-      ($('#status').prop('selectedIndex') && !statusMap[$('#status').val()]?.includes(rec.status))
+      ($('#status').prop('selectedIndex') &&
+        !statusMap[$('#status').val().toString()]?.includes(rec.status))
       // || e.rating < 1
     )
       return;
@@ -175,8 +271,13 @@ async function parseData() {
   settings = settingsSave();
   ignore.length = 0;
   ignore.push(...userIgnored);
-  for await (const chunk of fetchData(true)) ignore.push(...chunk);
-  console.log('Ignored entries:', ignore);
+  try {
+    // @ts-ignore
+    for await (const chunk of fetchData(true)) ignore.push(...chunk);
+  } catch {
+    return;
+  }
+  console.log('Ignored entries:', ignore); // @ts-ignore
   for await (const chunk of fetchData(false)) data.push(...chunk);
   console.log('Reading list:', data);
   recs.length = 0;
@@ -187,22 +288,22 @@ async function parseData() {
   message();
 
   console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
-  recs
+  const elems = recs
     .sort((a, b) => {
       switch (settings.sortMode) {
         case 'default':
         default:
-          return b - a;
+          return 0;
         case 'score':
           return b.meanScore - a.meanScore;
         case 'publishing':
-          return b.status - a.status;
+          return a.status.localeCompare(b.status);
         case 'recCount':
           return b.recommended.length - a.recommended.length;
         case 'popularity':
           return b.popularity - a.popularity;
         case 'chapters':
-          return Number(b.chapters) - Number(a.chapters);
+          return b.chapters || 0 - a.chapters || 0;
         case 'recsTotal':
           return (
             b.recommended.map(r => r.rating).reduce((p, n) => p + n, 0) -
@@ -215,7 +316,8 @@ async function parseData() {
           );
       }
     })
-    .forEach(drawRec);
+    .map(drawRec);
+  $('.content').empty().append(elems);
   recsCounter();
   console.log('Parsed!');
 }
@@ -260,7 +362,9 @@ function filterTag(ev) {
     // Toggle tag from array
     if (tagList.includes(tagName)) tagList.splice(tagList.indexOf(tagName), 1);
     else tagList.push(tagName);
-    tagList.length ? localStorage.setItem(listType, tagList) : localStorage.removeItem(listType);
+    tagList.length
+      ? localStorage.setItem(listType, tagList.toString())
+      : localStorage.removeItem(listType);
 
     // Show/Hide based on array results
     $('.content > .entry').each((_, entry) => {
@@ -290,11 +394,15 @@ function filterTag(ev) {
   }
 }
 
-function isFiltered(tags) {
-  return blTags?.some(b => tags.includes(b)) || !wlTags?.every(w => tags.includes(w));
+function isFiltered(tags: Array<Tags | string>) {
+  const recTags =
+    typeof tags[0] === 'string'
+      ? tags // @ts-ignore
+      : tags?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true)).map(tag => tag.name);
+  return blTags?.some(b => recTags.includes(b)) || !wlTags?.every(w => recTags.includes(w));
 }
 
-function appendTag(tag) {
+function appendTag(tag: string) {
   const classes = blTags.includes(tag) ? ' rejected' : wlTags.includes(tag) ? ' filtered' : '';
   $(DIV, {
     attr: { 'data-tag': tag },
@@ -302,143 +410,143 @@ function appendTag(tag) {
     text: tag,
     on: { click: filterTag },
   }).appendTo(this);
-  // .on('click', filterTag);
 }
 
-function drawRec(rec) {
-  const entry = $(DIV, {
-    id: rec.id,
-    hidden: isFiltered(rec.tags.map(t => t.name)),
-    class: 'entry',
-  });
-  const cell = $(DIV);
+function drawRec(rec: MediaRecommendation, index: number) {
+  const debug = index == 0 || index == recs.length - 1;
+  if (debug) console.log('Handling entry', index + 1, 'of', recs.length);
 
-  const link = $('<a>', { target: '_blank', href: rec.url });
-  const img = $('<img>', {
+  const entry = ce('div', {
+    id: rec.id,
+    className: 'entry',
+  });
+
+  const linkParams = { target: '_blank', href: rec.url };
+  const imgParams = {
     loading: 'lazy',
     crossorigin: 'anonymous',
     referrerpolicy: 'no-referrer',
-    attr: { width: '250px' },
+    width: 250,
     src: rec.cover.large,
-  });
+  };
 
   // COVER + URL
+  const cover = ce('div', { className: 'cover' });
+  let container = ce('a', linkParams);
+  container.appendChild(ce('img', imgParams));
 
-  link.append(img.clone());
-  const text = $('<p>', {
-    text: [
+  let text = ce('p', {
+    textContent: [
       rec.status ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase() : 'Unknown Status',
       rec.chapters ? `[${rec.chapters}]` : '',
       rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔',
       rec.meanScore + '%',
     ].join(' '),
   });
+  container.appendChild(text);
+  cover.appendChild(container);
 
-  link.append(text.clone());
-
-  cell.attr('class', 'cover').append(link.clone());
-  entry.append(cell.clone());
+  entry.appendChild(cover);
+  entry.hidden = isFiltered(rec.tags);
 
   // CONNECTIONS
-  cell.empty().attr('class', 'recs');
+  const connections = ce('div', { className: 'recs' });
   rec.recommended.forEach(origin => {
-    if ($(cell).find(`img[src="${origin.cover}"]`).length > 0) return;
-    link
-      .empty()
-      .attr({
-        href: ignore.includes(origin.id) ? origin.url : '#' + origin.id,
-        target: ignore.includes(origin.id) ? '_blank' : '_self',
-        'data-id': origin.id,
+    if ($(connections).find(`img[src="${origin.cover}"]`).length > 0) return;
+    container = ce('a', linkParams).attrs({
+      href: ignore.includes(origin.id) ? origin.url : '#' + origin.id,
+      target: ignore.includes(origin.id) ? '_blank' : '_self',
+      'data-id': origin.id,
+    });
+    container.appendChild(
+      ce('img', imgParams).attrs({
+        width: 75,
+        src: origin.cover,
+        title: origin.title,
+        alt: origin.title,
       })
-      .append(
-        img
-          .attr({ width: '75px', src: origin.cover, title: origin.title, alt: origin.title })
-          .clone()
-      );
-    cell.append(link.clone());
+    );
+    connections.appendChild(container);
   });
-  entry.append(cell.clone());
+  entry.appendChild(connections);
 
   // TITLE (PORTRAIT)
-  const textContainer = $(DIV);
-  const title = settings.englishTitles ? rec.title.english || rec.title.romaji : rec.title.romaji;
-  textContainer.append(
-    link
-      .empty()
-      .removeAttr('data-id')
-      .attr({ href: '#' + rec.id, target: '_self' })
-      .append(
-        $('<h3>', {
-          text: rec.isAdult ? '🔞' : '' + flags[rec.countryOfOrigin] + ' ' + title,
-          class: settings.englishTitles && rec.title.english ? 'licensed' : '',
-        })
-      )
-  );
-  cell.empty().attr('class', 'title').append(textContainer.clone());
+  const titlePortrait = ce('div', { className: 'title' });
+  const entryTitle = settings.englishTitles
+    ? rec.title.english || rec.title.romaji
+    : rec.title.romaji;
+  container = ce('a', { href: '#' + rec.id, target: '_self' });
+  text = ce('h3', {
+    className: settings.englishTitles && rec.title.english ? 'licensed' : '',
+    innerText: rec.isAdult ? '🔞' : '' + flags[rec.countryOfOrigin] + ' ' + entryTitle,
+  });
+  container.appendChild(text);
+  titlePortrait.appendChild(container);
 
-  entry.append(cell.clone());
+  entry.appendChild(titlePortrait);
 
   // ALT. TITLES (PORTRAIT)
-  textContainer.empty();
+  const altTitlesPortait = ce('div', { className: 'alt-titles' });
+
   const altTitles = [
     ...new Set([rec.title.english, rec.title.romaji, ...rec.synonyms, rec.title.native]),
   ]
-    .filter(i => (i && i != title ? i : false))
-    .join('<br />• ');
-  if (altTitles)
-    textContainer.append(
-      text
-        .empty()
-        .append('• ' + altTitles)
-        .clone()
-    );
-  cell.empty().attr('class', 'alt-titles').append(textContainer.clone());
+    .filter(i => (i && i != entryTitle ? i : false))
+    .join('\n• ');
 
-  entry.append(cell.clone());
+  container = ce('div');
+  if (altTitles) {
+    text = ce('p', { innerText: '• ' + altTitles });
+    container.appendChild(text);
+  }
+
+  altTitlesPortait.appendChild(text);
+  entry.appendChild(altTitlesPortait);
 
   // TITLES FOR LANDSCAPE
-  textContainer.empty().append(entry.find('.title a, .alt-titles p').clone());
-  cell.empty().attr('class', 'titles').append(textContainer.clone());
+  const titlesLandscape = ce('div', { className: 'titles' });
+  container = ce('div');
+  entry
+    .querySelectorAll('.title a, .alt-titles p')
+    .forEach(node => container.appendChild(node.cloneNode(true)));
+  titlesLandscape.appendChild(container);
 
-  entry.append(cell.clone());
+  entry.appendChild(titlesLandscape);
 
   // DESCRIPTION
-  textContainer.empty().append(
-    text
-      .empty()
-      .append(rec.description || '<i>&lt;Empty Description&gt;</i>')
-      .clone()
+  const details = ce('div', { className: 'details' });
+  container = ce('div');
+  container.appendChild(
+    ce('p', { innerHTML: rec.description || '<i>&lt;Empty Description&gt;</i>' })
   );
+  details.appendChild(container);
 
-  const tags = $(SPAN, { style: 'tags' });
+  // TAGS
+  const tags = ce('span', { className: 'tags' });
   rec.tags
     ?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true))
     .map(tag => tag.name)
     .forEach(appendTag, tags);
-  if (tags.children()) tags.appendTo(textContainer);
+  if (tags.innerHTML) container.appendChild(tags);
 
-  $('.content').append(
-    entry.append([
-      cell.empty().attr('class', 'details').append(textContainer),
-      $(SPAN, {
-        text: '×',
-        class: 'ignore',
-        on: {
-          click: () => {
-            ignore.push(rec.id);
-            userIgnored.push(rec.id);
-            localStorage.setItem('ignored', userIgnored);
-            console.log('Ignored', title);
-            entry.remove();
-            $(`[data-id='${rec.id}']`).each((_, e) => {
-              $(e).siblings().length ? $(e).remove() : $(e).closest('.entry').remove();
-            });
-            recsCounter();
-          },
-        },
-      }),
-    ])
-  );
+  entry.appendChild(details);
+
+  // Ignore Button
+  const ignoreBtn = ce('span', { className: 'ignore', innerText: '×' });
+  ignoreBtn.addEventListener('click', () => {
+    ignore.push(rec.id);
+    userIgnored.push(rec.id);
+    localStorage.setItem('ignored', userIgnored.toString());
+    console.log('Ignored', entryTitle);
+    entry.remove();
+    $(`[data-id='${rec.id}']`).each((_, e) => {
+      $(e).siblings().length ? $(e).remove() : $(e).closest('.entry').remove();
+    });
+    recsCounter();
+  });
+  entry.appendChild(ignoreBtn);
+
+  return entry;
 }
 
 $(async () => {
@@ -449,12 +557,12 @@ $(async () => {
   });
 
   $('#private').on('change', e => {
-    $('#username').prop('disabled', e.target.checked);
+    $('#username').prop('disabled', e.target.getAttribute('checked'));
     $('#username').show();
   });
   // Refilter on settings change
   $('#filters').on('click', async () => await parseData());
-  DEV: await parseData();
+  if (DEV) await parseData();
 
   // Back to Top button
   $('#top').on('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
@@ -488,15 +596,14 @@ function cleanTagPrompt() {
 }
 function settingsLoad() {
   const savedSettings = JSON.parse(localStorage.getItem('settings') || '{}');
-  $.each(savedSettings, (key, value) => {
-    switch ($('#' + key).prop('type')) {
+  $.each(savedSettings, (key: string, value: string) => {
+    const id = `#${key}`;
+    switch ($(id).prop('type')) {
       case 'checkbox':
-        $('#' + key).prop('checked', value);
+        $(id).prop('checked', value);
         break;
       default:
-        $('#' + key)
-          .val(value)
-          .trigger('change');
+        $(id).val(value).trigger('change');
         break;
     }
   });
@@ -513,7 +620,7 @@ function settingsLoad() {
 }
 function settingsSave() {
   const savedSettings = {};
-  $('.settings input, .settings select').each((_, el) => {
+  qa('.settings input, .settings select').forEach(el => {
     if (!el.id) return;
     switch (el.type) {
       case 'checkbox':
@@ -529,7 +636,7 @@ function settingsSave() {
   return savedSettings;
 }
 
-export function message() {
+export function message(...line: string[]) {
   $('.content')
     .empty()
     .append(
