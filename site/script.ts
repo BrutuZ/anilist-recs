@@ -102,7 +102,11 @@ declare global {
 
 HTMLElement.prototype.attrs = function (o) {
   for (let k in o) {
-    this[k] = o[k];
+    if (k == 'dataset')
+      for (let d in o[k]) {
+        this[k][d] = o[k][d];
+      }
+    else this[k] = o[k];
   }
   return this;
 };
@@ -456,7 +460,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
     container = ce('a', linkParams).attrs({
       href: ignore.includes(origin.id) ? origin.url : '#' + origin.id,
       target: ignore.includes(origin.id) ? '_blank' : '_self',
-      'data-id': origin.id,
+      dataset: { id: origin.id },
     });
     container.appendChild(
       ce('img', imgParams).attrs({
