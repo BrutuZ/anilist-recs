@@ -479,10 +479,11 @@ function drawRec(rec: MediaRecommendation, index: number) {
   const entryTitle = settings.englishTitles
     ? rec.title.english || rec.title.romaji
     : rec.title.romaji;
+
   container = ce('a', { href: '#' + rec.id, target: '_self' });
   text = ce('h3', {
-    className: settings.englishTitles && rec.title.english ? 'licensed' : '',
-    innerText: rec.isAdult ? '🔞' : '' + flags[rec.countryOfOrigin] + ' ' + entryTitle,
+    className: settings.englishTitles && rec.title.english ? 'licensed' : null,
+    innerText: (rec.isAdult ? '🔞' : '') + flags[rec.countryOfOrigin] + ' ' + entryTitle,
   });
   container.appendChild(text);
   titlePortrait.appendChild(container);
