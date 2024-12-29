@@ -68,6 +68,7 @@ body {
   width: fit-content;
 }
 input,
+select,
 .select2-container {
   background-color: var(--color-bg);
   border-radius: 5px;
@@ -82,7 +83,7 @@ button {
   border-style: none;
   color: var(--color-button-text);
   cursor: pointer;
-  padding: 0.25em 0.5em;
+  padding: 0.5em 1.5em;
 }
 #active-tags {
   backdrop-filter: blur(4px);

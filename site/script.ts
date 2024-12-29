@@ -575,7 +575,7 @@ $(async () => {
   $(document).on('scroll', scrollHandler);
 
   // Style Selects
-  $('select').select2({
+  $('select[multiple]').select2({
     minimumResultsForSearch: -1,
     width: 'style',
   });
