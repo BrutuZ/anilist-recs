@@ -442,10 +442,10 @@ function drawRec(rec: MediaRecommendation, index: number) {
   let text = ce('p', {
     textContent: [
       rec.status ? rec.status.charAt(0) + rec.status.slice(1).toLowerCase() : 'Unknown Status',
-      rec.chapters ? `[${rec.chapters}]` : '',
+      rec.chapters ? ` [${rec.chapters}] ` : ' ',
       rec.meanScore >= 70 ? '💖' : rec.meanScore >= 60 ? '💙' : '💔',
       rec.meanScore + '%',
-    ].join(' '),
+    ].join(''),
   });
   container.appendChild(text);
   cover.appendChild(container);
