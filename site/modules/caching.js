@@ -53,7 +53,8 @@ async function getCachedData(cacheName = cacheBaseName) {
   if (!cachedData && apiUrl.searchParams.get('subRecs') === '0') {
     apiUrl.searchParams.set('subRecs', '1');
     cachedData = await cacheStorage.match(apiUrl, options);
-    if (cachedData) console.log('Found cache with extra information. Reduce, Reuse, Recycle!');
+    if (!cachedData) apiUrl.searchParams.set('subRecs', '0');
+    else console.log('Found cache with extra information. Reduce, Reuse, Recycle!');
   }
   return cachedData;
 }
