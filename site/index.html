@@ -122,31 +122,8 @@
           </form>
         </span>
         <span>
-          <label for="adult">NSFW</label>
-          <select id="adult">
-            <option>Only</option>
-            <option>None</option>
-            <option selected="true">Both</option>
-          </select>
-        </span>
-        <span>
-          <label for="lists">Lists:</label>
-          <select id="lists" multiple>
-            <option value="CURRENT" selected>Current</option>
-            <option value="PLANNING">Planning</option>
-          </select>
-        </span>
-        <span>
           <input type="checkbox" checked="true" id="englishTitles" />
           <label for="englishTitles">Prefer English Titles</label>
-        </span>
-        <span>
-          <label for="country">Type:</label>
-          <select id="country" data-placeholder="Any" multiple>
-            <option value="JP" selected>🇯🇵 Manga</option>
-            <option value="KR" selected>🇰🇷 Manhwa</option>
-            <option value="CN" selected>🇨🇳 Manhua</option>
-          </select>
         </span>
         <span>
           <input type="checkbox" id="subRecs" />
@@ -155,6 +132,12 @@
         <span>
           <input type="checkbox" checked="true" id="spoilers" />
           <label for="spoilers">Hide Spoiler Tags</label>
+        </span>
+        <span>
+          <label>
+            Min. Score
+            <input type="number" id="minScore" min="0" max="100" value="0" maxlength="3" />
+          </label>
         </span>
         <span>
           <label for="sortMode">Sorting:</label>
@@ -170,6 +153,14 @@
           </select>
         </span>
         <span>
+          <label for="adult">NSFW</label>
+          <select id="adult">
+            <option>Only</option>
+            <option>None</option>
+            <option selected="true">Both</option>
+          </select>
+        </span>
+        <span>
           <label>
             Status:
             <select id="status">
@@ -180,10 +171,19 @@
           </label>
         </span>
         <span>
-          <label>
-            Min. Score
-            <input type="number" id="minScore" min="0" max="100" value="0" maxlength="3" />
-          </label>
+          <label for="lists">Lists:</label>
+          <select id="lists" multiple>
+            <option value="CURRENT" selected>Current</option>
+            <option value="PLANNING">Planning</option>
+          </select>
+        </span>
+        <span>
+          <label for="country">Type:</label>
+          <select id="country" data-placeholder="Any" multiple>
+            <option value="JP" selected>🇯🇵 Manga</option>
+            <option value="KR" selected>🇰🇷 Manhwa</option>
+            <option value="CN" selected>🇨🇳 Manhua</option>
+          </select>
         </span>
         <span><button id="filters">OK</button></span>
       </span>
