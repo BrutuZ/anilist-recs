@@ -102,7 +102,7 @@ declare global {
 
 HTMLElement.prototype.attrs = function (o) {
   for (let k in o) {
-    if (k == 'dataset')
+    if (typeof o[k] == 'object')
       for (let d in o[k]) {
         this[k][d] = o[k][d];
       }
