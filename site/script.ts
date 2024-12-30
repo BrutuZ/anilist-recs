@@ -23,6 +23,8 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
 });
 declare global {
   var DEV: boolean;
+  const qe: HTMLElement;
+  const qa: NodeListOf<HTMLElement>;
 
   interface HTMLElement {
     attrs(attributes: object): HTMLElement;
@@ -117,8 +119,8 @@ function ce(element: string, params?: object): HTMLElement {
   return e;
 }
 
-const qe = document.querySelector.bind(document);
-const qa = document.querySelectorAll.bind(document);
+const qe = document.querySelector.bind(document) as typeof document.querySelector;
+const qa = document.querySelectorAll.bind(document) as typeof document.querySelectorAll;
 
 const DIV = '<div>',
   SPAN = '<span>',
@@ -625,7 +627,7 @@ function settingsLoad() {
 }
 function settingsSave() {
   const savedSettings = {};
-  qa('.settings input, .settings select').forEach(el => {
+  qa('.settings input, .settings select').forEach((el: HTMLInputElement | HTMLSelectElement) => {
     if (!el.id) return;
     switch (el.type) {
       case 'checkbox':
