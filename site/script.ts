@@ -337,23 +337,19 @@ function recsCounter() {
   }
 }
 
-function toast(content: string) {
+async function toast(content: string) {
   const toast = ce('div', {
-    className: 'entry header flash',
+    className: 'entry header toast',
     innerText: content,
   }) as HTMLDivElement;
-  qe('body').appendChild(toast);
   toast.addEventListener(
-    'animationiteration',
-    () => {
-      toast.style.animationPlayState = 'paused';
-      setTimeout(() => {
-        toast.removeAttribute('style');
-        setTimeout(() => toast.remove(), 500);
-      }, 2000);
+    'animationend',
+    e => {
+      if (e.elapsedTime > 0.5) toast.remove();
     },
     false
   );
+  qe('body').appendChild(toast);
 }
 
 function filterTag(ev) {

@@ -196,17 +196,12 @@ span.select2-container--default
   display: block;
   text-align: center;
 }
-.header.flash {
-  animation: 500ms pop 2 alternate ease-in-out;
-  background-color: var(--color-fg);
-  bottom: -3em;
-  color: var(--color-tag-text);
+.header.toast {
+  animation:
+    500ms ease-in-out 0s 1 normal forwards pop,
+    550ms ease-in-out 3.5s 1 reverse forwards pop;
   display: block;
-  left: 50%;
-  opacity: 0;
   position: fixed;
-  width: 0;
-  width: 0;
   z-index: 5;
 }
 .header > .title {
@@ -214,10 +209,18 @@ span.select2-container--default
 }
 
 @keyframes pop {
-  100% {
-    animation-play-state: paused;
+  from {
+    background-color: var(--color-fg);
+    bottom: -3em;
+    color: var(--color-text);
+    left: 50%;
+    opacity: 0;
+    width: 0;
+  }
+  to {
     background-color: var(--color-tag-active);
     bottom: 0;
+    color: var(--color-tag-text);
     left: 10%;
     opacity: 0.8;
     width: 80%;
