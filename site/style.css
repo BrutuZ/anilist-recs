@@ -20,7 +20,7 @@ body {
 }
 
 [hidden] {
-  display: none !important;
+  visibility: collapse !important;
 }
 
 #cached {
@@ -159,6 +159,11 @@ span.select2-container--default
   position: absolute;
   text-align: center;
   width: 80%;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ENTRIES */
