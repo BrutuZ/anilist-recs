@@ -329,9 +329,31 @@ async function parseData() {
 }
 
 function recsCounter() {
-  $('.header')
-    .empty()
-    .text($('.content > .entry:visible').length + ' Recommendations');
+  const text = qa('.content > .entry:not([hidden])').length + ' Recommendations';
+  const element = qe('.header');
+  element.innerHTML = text;
+  if (element.getBoundingClientRect().top < 0) {
+    toast(text);
+  }
+}
+
+function toast(content: string) {
+  const toast = ce('div', {
+    className: 'entry header flash',
+    innerText: content,
+  }) as HTMLDivElement;
+  qe('body').appendChild(toast);
+  toast.addEventListener(
+    'animationiteration',
+    () => {
+      toast.style.animationPlayState = 'paused';
+      setTimeout(() => {
+        toast.removeAttribute('style');
+        setTimeout(() => toast.remove(), 500);
+      }, 2000);
+    },
+    false
+  );
 }
 
 function filterTag(ev) {
