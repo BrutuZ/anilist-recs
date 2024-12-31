@@ -29,9 +29,8 @@ const build = await esbuild.context({
   },
   platform: 'browser',
   alias: {
-    jose: productionMode
-      ? 'https://cdnjs.cloudflare.com/ajax/libs/jose/5.9.6/util/decode_jwt.js'
-      : 'jose',
+    jose: 'https://cdnjs.cloudflare.com/ajax/libs/jose/5.9.6/util/decode_jwt.js',
+    'js-cookie': 'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.5/js.cookie.mjs',
     select2css: 'node_modules/select2/dist/css/select2.css',
   },
 });
