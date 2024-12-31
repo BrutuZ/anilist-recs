@@ -211,6 +211,7 @@ function parseRecs(manga: Manga) {
       rec.isAdult == $('#adult').prop('selectedIndex') ||
       rec.meanScore < Number($('#minScore').val()) ||
       (settings.country.length > 0 && !settings.country?.includes(rec.countryOfOrigin)) ||
+      (settings.licensed && !rec.title.english) ||
       ($('#status').prop('selectedIndex') &&
         !statusMap[$('#status').val().toString()]?.includes(rec.status))
       // || e.rating < 1
