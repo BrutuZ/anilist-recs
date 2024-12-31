@@ -225,8 +225,8 @@ function parseRecs(manga: Manga) {
       url: manga.url,
       rating: entry.rating,
     };
-    if (recs.find(e => e.id == rec.id)) {
-      const index = recs.findIndex(e => e.id == rec.id);
+    const index = recs.findIndex(e => e.id == rec.id);
+    if (index > -1) {
       recs[index].recommended.push(recObj);
       return;
     } else {
