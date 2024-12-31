@@ -161,7 +161,7 @@ async function* fetchData(onList = false) {
   if (settings.private) headers['Authorization'] = 'Bearer ' + jwt;
   for (let chunk = 1; chunk < 21; chunk++) {
     onList
-      ? message('(⓿_⓿)', 'Stalking your profile ' + '.'.repeat(chunk - 1))
+      ? message('(⓿' + '_'.repeat(chunk) + '⓿)', 'Stalking your profile ')
       : message(
           '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(chunk),
           'Digging Recommentations',
@@ -405,6 +405,7 @@ function appendTag(tag: string) {
 function drawRec(rec: MediaRecommendation, index: number) {
   const debug = index == 0 || index == recs.length - 1;
   if (debug) console.log('Handling entry', index + 1, 'of', recs.length);
+  if (index % 100 == 0) message('(▀̿Ĺ̯▀̿ ̿)', 'Getting Nerdy', index + 1 + ' entries so far');
 
   const entry = ce('div', {
     id: rec.id,
