@@ -408,8 +408,9 @@ function drawRec(rec: MediaRecommendation, index: number) {
   if (index % 100 == 0) message('(▀̿Ĺ̯▀̿ ̿)', 'Getting Nerdy', index + 1 + ' entries so far');
 
   const entry = ce('div', {
-    id: rec.id,
+    id: 'aid-' + rec.id,
     className: 'entry',
+    dataset: { id: rec.id },
   });
 
   const linkParams = { target: '_blank', href: rec.url };
@@ -443,9 +444,9 @@ function drawRec(rec: MediaRecommendation, index: number) {
   // CONNECTIONS
   const connections = ce('div', { className: 'recs' });
   rec.recommended.forEach(origin => {
-    if ($(connections).find(`img[src="${origin.cover}"]`).length > 0) return;
+    if ($(connections).find(`[data-id="${origin.id}"]`).length > 0) return;
     container = ce('a', linkParams).attrs({
-      href: ignore.includes(origin.id) ? origin.url : '#' + origin.id,
+      href: ignore.includes(origin.id) ? origin.url : '#aid-' + origin.id,
       target: ignore.includes(origin.id) ? '_blank' : '_self',
       dataset: { id: origin.id },
     });
@@ -467,7 +468,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
     ? rec.title.english || rec.title.romaji
     : rec.title.romaji;
 
-  container = ce('a', { href: '#' + rec.id, target: '_self' });
+  container = ce('a', { href: '#aid-' + rec.id, target: '_self' });
   text = ce('h3', {
     className: settings.englishTitles && rec.title.english ? 'licensed' : null,
     innerText: (rec.isAdult ? '🔞' : '') + flags[rec.countryOfOrigin] + ' ' + entryTitle,
@@ -531,8 +532,8 @@ function drawRec(rec: MediaRecommendation, index: number) {
     localStorage.setItem('ignored', userIgnored.toString());
     console.log('Ignored', entryTitle);
     entry.remove();
-    $(`[data-id='${rec.id}']`).each((_, e) => {
-      $(e).siblings().length ? $(e).remove() : $(e).closest('.entry').remove();
+    $(`a[data-id='${rec.id}']`).each((_, e) => {
+      $(e).siblings().length ? e.remove() : $(e).closest('.entry').remove();
     });
     recsCounter();
   });
