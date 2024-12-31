@@ -138,9 +138,6 @@ export const apiUrl = new URL('https://graphql.anilist.co'),
   userIgnored: number[] = [],
   recs: MediaRecommendation[] = [],
   ignore: number[] = [];
-var settings = settingsLoad(),
-  // lastEntry = undefined,
-  jwt = localStorage.getItem('jwt');
 deleteOldCaches(); // Clear expired cache
 export var settings = settingsLoad();
 // lastEntry = undefined,
@@ -205,8 +202,8 @@ async function* fetchData(onList = false) {
 }
 
 function parseRecs(manga: Manga) {
-  manga.recommendations.entries.forEach(entry => {
-    const rec = entry.mediaRecommendation;
+  manga.recommendations.entries.forEach(listEntry => {
+    const rec = listEntry.mediaRecommendation;
     // APPLY FILTERS
     if (
       !rec ||
@@ -224,7 +221,7 @@ function parseRecs(manga: Manga) {
       cover: manga.cover.medium,
       title: manga.title.english || manga.title.romaji,
       url: manga.url,
-      rating: entry.rating,
+      rating: listEntry.rating,
     };
     const index = recs.findIndex(e => e.id == rec.id);
     if (index > -1) {
@@ -234,7 +231,7 @@ function parseRecs(manga: Manga) {
       rec.recommended = [recObj];
       rec.filtered = isFiltered(rec.tags);
       recs.push(rec);
-      if (rec.recommendations && settings.subRecs) {
+      if (settings.subRecs && rec.recommendations) {
         parseRecs(rec);
       }
     }
@@ -256,12 +253,13 @@ async function parseData() {
   console.log('Reading list:', data);
   recs.length = 0;
 
-  console.log('Parsing Recomendations...');
+  console.time('Parsing Recommendations');
   data.forEach(manga => parseRecs(manga));
-  console.log('Recomendations:', recs);
-  message();
+  console.timeEnd('Parsing Recommendations');
+  console.log('Recommendations:', recs);
 
   console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
+  console.time('Mapping Recommendations');
   const elems = recs
     .sort((a, b) => {
       switch (settings.sortMode) {
@@ -291,21 +289,27 @@ async function parseData() {
       }
     })
     .map(drawRec);
+  console.timeEnd('Mapping Recommendations');
+  console.time('Drawing Recommendations');
   $('.content').empty().append(elems);
+  console.timeEnd('Drawing Recommendations');
   recsCounter();
   console.log('Parsed!');
 }
 
-function recsCounter() {
+async function recsCounter() {
+  if (DEV) console.log('Counting recs');
+  console.time('Counter');
   const text = qa('.content > .entry:not([hidden])').length + ' Recommendations';
   const element = qe('.header');
   element.innerHTML = text;
-  if (element.getBoundingClientRect().top < 0) {
-    toast(text);
-  }
+  console.timeEnd('Counter');
+  if (DEV) console.log('Counted recs', text, recs.filter(r => !r.filtered).length);
+  if (element.getBoundingClientRect().top < 0) toast(text);
 }
 
 async function toast(content: string) {
+  console.time('Toast');
   const toast = ce('div', {
     className: 'entry header toast',
     innerText: content,
@@ -318,11 +322,11 @@ async function toast(content: string) {
     false
   );
   qe('body').appendChild(toast);
+  console.timeEnd('Toast');
 }
 
 function filterTag(ev) {
   ev.preventDefault();
-  console.log('Clicked Tag', this, ev);
   cleanTagPrompt();
   const tagName = this.dataset.tag;
 
@@ -345,8 +349,12 @@ function filterTag(ev) {
   return false;
 
   function doTagFilter(element = undefined, blacklist = false) {
-    ev.stopImmediatePropagation();
+    console.time('Filter tag');
+    console.log('Clicked Tag', this, ev);
+    // ev.stopImmediatePropagation();
+    console.time('Prompt Removal');
     cleanTagPrompt();
+    console.timeEnd('Prompt Removal');
     // Pick list mode
     const tagList = blacklist ? blTags : wlTags;
     const listType = blacklist ? 'blacklist' : 'whitelist';
@@ -359,14 +367,21 @@ function filterTag(ev) {
       : localStorage.removeItem(listType);
 
     // Show/Hide based on array results
+    console.time('Styled tags');
+    $(`[data-tag="${tagName}"]`).toggleClass(blacklist ? 'rejected' : 'filtered');
+    console.timeEnd('Styled tags');
+    const changed = [];
+    console.time('Filtered changed');
     recs.forEach(r => {
       if (r.filtered != isFiltered(r.tags)) {
         changed.push(r.id.toString());
         r.filtered = !r.filtered;
       }
     });
+    console.timeEnd('Filtered changed');
 
     // Manage the header list
+    console.time('Header thingy');
     let headerTag = $(`#active-tags [data-tag="${tagName}"]`);
     if (headerTag.length) {
       headerTag.first().remove();
@@ -375,11 +390,31 @@ function filterTag(ev) {
       $('#active-tags').append($(element).clone(true));
       console.log('Drawing header');
     }
+    console.timeEnd('Header thingy');
+    fadeCovers(changed);
 
     recsCounter();
     console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
+    console.timeEnd('Filter tag');
     return false;
   }
+}
+
+function fadeCovers(ids: string[]) {
+  console.time('Enumerating');
+  const elements = qa(settings.fade ? '[data-id]' : '.entry[data-id]') as NodeListOf<
+    HTMLDivElement | HTMLLinkElement
+  >;
+  console.timeEnd('Enumerating');
+  console.time('DOM stuff');
+  elements.forEach(el => {
+    if (!ids.includes(el.dataset.id)) return;
+    el.tagName == 'DIV'
+      ? el.toggleAttribute('hidden')
+      : settings.fade && el.classList.toggle('faded');
+  });
+  console.timeEnd('DOM stuff');
+  return elements;
 }
 
 function isFiltered(tags: Array<Tags | string>) {
