@@ -89,6 +89,7 @@ declare global {
     isAdult: boolean;
     recommendations: Recommendation;
     recommended: SlimRecommendations[];
+    filtered: boolean;
   }
   interface Tags {
     name: string;
@@ -231,6 +232,7 @@ function parseRecs(manga: Manga) {
       return;
     } else {
       rec.recommended = [recObj];
+      rec.filtered = isFiltered(rec.tags);
       recs.push(rec);
       if (rec.recommendations && settings.subRecs) {
         parseRecs(rec);
@@ -357,15 +359,11 @@ function filterTag(ev) {
       : localStorage.removeItem(listType);
 
     // Show/Hide based on array results
-    $('.content > .entry').each((_, entry) => {
-      $(entry)
-        .find(`[data-tag="${tagName}"]`)
-        .toggleClass(blacklist ? 'rejected' : 'filtered');
-      const tags = $(entry)
-        .find('.tag')
-        .map((_, t) => t.dataset.tag)
-        .get();
-      $(entry).prop('hidden', isFiltered(tags));
+    recs.forEach(r => {
+      if (r.filtered != isFiltered(r.tags)) {
+        changed.push(r.id.toString());
+        r.filtered = !r.filtered;
+      }
     });
 
     // Manage the header list
