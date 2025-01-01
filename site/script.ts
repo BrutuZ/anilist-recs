@@ -479,9 +479,10 @@ function drawRec(rec: MediaRecommendation, index: number) {
   const connections = ce('div', { className: 'recs' });
   rec.recommended.forEach(origin => {
     if ($(connections).find(`[data-id="${origin.id}"]`).length > 0) return;
+    const ignored = ignore.includes(origin.id);
     container = ce('a', linkParams).attrs({
-      href: ignore.includes(origin.id) ? origin.url : '#aid-' + origin.id,
-      target: ignore.includes(origin.id) ? '_blank' : '_self',
+      href: ignored ? origin.url : '#aid-' + origin.id,
+      target: ignored ? '_blank' : '_self',
       dataset: { id: origin.id },
     });
     container.appendChild(
@@ -490,6 +491,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
         src: origin.cover,
         title: origin.title,
         alt: origin.title,
+        className: ignored ? null : 'subrec',
       })
     );
     connections.appendChild(container);

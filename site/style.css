@@ -285,7 +285,10 @@ span.select2-container--default
 img {
   border-radius: 3%;
 }
-
+.recs img.subrec {
+  border: groove 2px var(--color-button-bg);
+  padding: 2px;
+}
 /* TITLES */
 .titles {
   /* LANDSCAPE LAYOUT */
