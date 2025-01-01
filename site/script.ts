@@ -240,7 +240,7 @@ function parseRecs(manga: Manga) {
 
 async function parseData() {
   settings = settingsSave();
-  ignore = userIgnored;
+  ignore = [...userIgnored];
   try {
     // @ts-ignore
     for await (const chunk of fetchData(true)) ignore.push(...chunk);
@@ -638,12 +638,13 @@ function settingsLoad() {
     hidden: $('#private').prop('checked'),
     disabled: $('#private').prop('checked'),
   });
-  wlTags = localStorage.getItem('whitelist')?.split(',');
-  blTags = localStorage.getItem('blacklist')?.split(',');
-  userIgnored = localStorage
-    .getItem('ignored')
-    ?.split(',')
-    .map(i => Number(i));
+  wlTags = localStorage.getItem('whitelist')?.split(',') || [];
+  blTags = localStorage.getItem('blacklist')?.split(',') || [];
+  userIgnored =
+    localStorage
+      .getItem('ignored')
+      ?.split(',')
+      .map(i => Number(i)) || [];
   $('#active-tags').empty();
   [...wlTags, ...blTags].forEach(appendTag, $('#active-tags'));
   console.log('Read settings:', savedSettings);
