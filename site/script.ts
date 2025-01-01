@@ -560,20 +560,42 @@ function drawRec(rec: MediaRecommendation, index: number) {
 
   // Ignore Button
   const ignoreBtn = ce('span', { className: 'ignore', innerText: '×' });
-  ignoreBtn.addEventListener('click', () => {
-    ignore.push(rec.id);
-    userIgnored.push(rec.id);
-    localStorage.setItem('ignored', userIgnored.toString());
-    console.log('Ignored', entryTitle);
-    entry.remove();
-    $(`a[data-id='${rec.id}']`).each((_, e) => {
-      $(e).siblings().length ? e.remove() : $(e).closest('.entry').remove();
-    });
-    recsCounter();
-  });
+  ignoreBtn.addEventListener('click', ignoreEntry);
   entry.appendChild(ignoreBtn);
 
   return entry;
+}
+
+function ignoreEntry(this: HTMLElement) {
+  const id = Number(this.parentElement.dataset.id);
+  const entryTitle = (this.parentNode.querySelector('.title') as HTMLElement)?.innerText;
+
+  const modal = ce('div', { className: 'modal-wrapper' });
+  modal.addEventListener('click', ev => {
+    if (ev.target == modal) modal.remove();
+  });
+  const content = ce('div', { className: 'modal' });
+  const text = ce('p', {
+    innerText: 'Always ignore\n' + entryTitle + '\nand its recommendations in the future?',
+  });
+  const btnNo = ce('button', { innerText: 'No' });
+  btnNo.addEventListener('click', () => modal.remove());
+  const btnYes = ce('button', { innerText: 'Yes' });
+  btnYes.addEventListener('click', () => {
+    ignore.push(id);
+    userIgnored.push(id);
+    localStorage.setItem('ignored', userIgnored.toString());
+    console.log('Ignored', entryTitle);
+    this.parentElement.remove();
+    $(`a[data-id='${id}']`).each((_, e) => {
+      $(e).siblings().length ? e.remove() : $(e).closest('.entry').remove();
+    });
+    modal.remove();
+    recsCounter();
+  });
+  content.append(text, this.parentNode.querySelector('.cover img').cloneNode(), btnYes, btnNo);
+  modal.append(content);
+  qe('body').appendChild(modal);
 }
 
 $(async () => {
