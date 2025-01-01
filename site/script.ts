@@ -1,4 +1,3 @@
-import Cookies from 'js-cookie';
 import { deleteOldCaches, getData } from './modules/caching.js';
 import { jwt, validateUser } from './modules/anilistAuth.js';
 
@@ -133,10 +132,10 @@ const DIV = '<div>',
   };
 export const apiUrl = new URL('https://graphql.anilist.co'),
   data: Manga[] = [],
+  recs: MediaRecommendation[] = [];
+export var userIgnored: number[] = [],
   wlTags: string[] = [],
   blTags: string[] = [],
-  userIgnored: number[] = [],
-  recs: MediaRecommendation[] = [],
   ignore: number[] = [];
 deleteOldCaches(); // Clear expired cache
 export var settings = settingsLoad();
@@ -241,8 +240,7 @@ function parseRecs(manga: Manga) {
 
 async function parseData() {
   settings = settingsSave();
-  ignore.length = 0;
-  ignore.push(...userIgnored);
+  ignore = userIgnored;
   try {
     // @ts-ignore
     for await (const chunk of fetchData(true)) ignore.push(...chunk);
@@ -640,8 +638,12 @@ function settingsLoad() {
     hidden: $('#private').prop('checked'),
     disabled: $('#private').prop('checked'),
   });
-  wlTags.push(...(localStorage.getItem('whitelist')?.split(',') || []));
-  blTags.push(...(localStorage.getItem('blacklist')?.split(',') || []));
+  wlTags = localStorage.getItem('whitelist')?.split(',');
+  blTags = localStorage.getItem('blacklist')?.split(',');
+  userIgnored = localStorage
+    .getItem('ignored')
+    ?.split(',')
+    .map(i => Number(i));
   $('#active-tags').empty();
   [...wlTags, ...blTags].forEach(appendTag, $('#active-tags'));
   console.log('Read settings:', savedSettings);
