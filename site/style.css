@@ -20,7 +20,7 @@ body {
 }
 
 [hidden] {
-  visibility: collapse !important;
+  display: none !important;
 }
 
 #cached {
