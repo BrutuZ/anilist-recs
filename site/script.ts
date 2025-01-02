@@ -144,7 +144,7 @@ export var settings = settingsLoad();
 async function* fetchData(onList = false) {
   settingsSave();
   if (!settings.lists.length) {
-    message('(ㆆ_ㆆ)', 'Select at least one list, BAKA!');
+    message('(ㆆ_ㆆ)💢', 'Select at least one list, BAKA!');
     throw new Error('No lists selected');
   }
   const user = validateUser();
@@ -161,7 +161,7 @@ async function* fetchData(onList = false) {
       ? message('(⓿' + '_'.repeat(chunk) + '⓿)', 'Stalking your profile ')
       : message(
           '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(chunk),
-          'Digging Recommentations',
+          'Downloading Recommentations',
           '(This may take a while)'
         );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
@@ -288,10 +288,18 @@ async function parseData() {
       }
     })
     .map(drawRec);
+  message('(▀̿Ĺ̯▀̿ ̿)', 'Getting nerdy with the data');
   console.timeEnd('Mapping Recommendations');
   console.time('Drawing Recommendations');
   $('.content').empty().append(elems);
   console.timeEnd('Drawing Recommendations');
+  if (settings.fade) {
+    console.time('Fading Covers');
+    fadeCovers(
+      Array.from(qa('.content > .entry[hidden]')).map(e => (e as HTMLDivElement).dataset.id)
+    );
+    console.timeEnd('Fading Covers');
+  }
   recsCounter();
   console.log('Parsed!');
 }
@@ -324,18 +332,18 @@ async function toast(content: string) {
   console.timeEnd('Toast');
 }
 
-function filterTag(ev) {
+function filterTag(this: HTMLDivElement, ev: MouseEvent) {
   ev.preventDefault();
   cleanTagPrompt();
   const tagName = this.dataset.tag;
 
   // Check if Tag is already active
-  if (ev.target.classList.contains('rejected')) {
+  if (this.classList.contains('rejected')) {
     console.log('De-rejecting tag');
     doTagFilter(this, true);
     return false;
   }
-  if (ev.target.classList.contains('filtered')) {
+  if (this.classList.contains('filtered')) {
     console.log('De-filtering tag');
     doTagFilter(this, false);
     return false;
@@ -390,7 +398,7 @@ function filterTag(ev) {
       console.log('Drawing header');
     }
     console.timeEnd('Header thingy');
-    fadeCovers(changed);
+    fadeCovers(changed, true);
 
     recsCounter();
     console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
@@ -399,18 +407,17 @@ function filterTag(ev) {
   }
 }
 
-function fadeCovers(ids: string[]) {
-  console.time('Enumerating');
+function fadeCovers(ids: string[], hideEntries: boolean = false) {
+  console.time('Enumerating entry elements');
   const elements = qa(settings.fade ? '[data-id]' : '.entry[data-id]') as NodeListOf<
     HTMLDivElement | HTMLLinkElement
   >;
-  console.timeEnd('Enumerating');
+  console.timeEnd('Enumerating entry elements');
   console.time('DOM stuff');
   elements.forEach(el => {
     if (!ids.includes(el.dataset.id)) return;
-    el.tagName == 'DIV'
-      ? el.toggleAttribute('hidden')
-      : settings.fade && el.classList.toggle('faded');
+    hideEntries && el.tagName == 'DIV' && el.toggleAttribute('hidden');
+    settings.fade && el.tagName == 'A' && el.classList.toggle('faded');
   });
   console.timeEnd('DOM stuff');
   return elements;
@@ -435,14 +442,14 @@ function appendTag(tag: string) {
 }
 
 function drawRec(rec: MediaRecommendation, index: number) {
-  const debug = index == 0 || index == recs.length - 1;
-  if (debug) console.log('Handling entry', index + 1, 'of', recs.length);
-  if (index % 100 == 0) message('(▀̿Ĺ̯▀̿ ̿)', 'Getting Nerdy', index + 1 + ' entries so far');
+  if (index == 0 || index == recs.length - 1)
+    console.log('Handling entry', index + 1, 'of', recs.length);
 
   const entry = ce('div', {
     id: 'aid-' + rec.id,
     className: 'entry',
     dataset: { id: rec.id },
+    hidden: isFiltered(rec.tags),
   });
 
   const linkParams = { target: '_blank', href: rec.url };
@@ -471,7 +478,6 @@ function drawRec(rec: MediaRecommendation, index: number) {
   cover.appendChild(container);
 
   entry.appendChild(cover);
-  entry.hidden = isFiltered(rec.tags);
 
   // CONNECTIONS
   const connections = ce('div', { className: 'recs' });
@@ -690,7 +696,7 @@ function settingsSave() {
   return savedSettings;
 }
 
-export function message(...line: string[]) {
+export function message(..._line: string[]) {
   $('.content')
     .empty()
     .append(
