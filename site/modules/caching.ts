@@ -1,4 +1,4 @@
-import { apiUrl, message } from '../script.js';
+import { apiUrl, message } from '../script';
 
 const cacheBaseName = 'MangaRecs';
 // Try to get data from the cache, but fall back to fetching it live.
@@ -7,17 +7,9 @@ export async function getData(options = {}) {
   await deleteOldCaches(cacheName);
   let cachedData = await getCachedData(cacheName);
 
-  $('#cached').prop('hidden', !Boolean(cachedData));
   if (cachedData) {
     console.log('Retrieved cached data', apiUrl.search.slice(1));
-    const cacheCountdown = new Date(
-      (localStorage.getItem('cacheExpiry') || Date.now()) - Date.now()
-    )
-      .toISOString()
-      .slice(11, 16)
-      .replace('00:', '')
-      .replace(':', 'h ');
-    $('#cached > p').text(`${cacheCountdown}m`);
+    cacheIndicator();
     return cachedData;
   }
 
@@ -28,19 +20,32 @@ export async function getData(options = {}) {
     if (!response.ok) {
       message(
         'Request failed!',
-        response.status,
+        response.status.toString(),
         response.statusText || (await response.json())?.errors?.at(0)?.message
       );
-      return false;
+      return undefined;
     }
     cacheStorage
       .put(apiUrl, response.clone())
-      .then(() => localStorage.setItem('cacheExpiry', Date.now() + 10800000)); // 3h
+      .then(() => localStorage.setItem('cacheExpiry', (Date.now() + 10800000).toString())); // 3h
     return response;
   });
   return cachedData;
 }
 // Get data from the cache.
+
+function cacheIndicator() {
+  const cacheCountdown = new Date(
+    (Number(localStorage.getItem('cacheExpiry')) || Date.now()) - Date.now()
+  )
+    .toISOString()
+    .slice(11, 16)
+    .replace('00:', '')
+    .replace(':', 'h ');
+  $('#cached > p').text(`${cacheCountdown}m`);
+  $('#cached').prop('hidden', expiredCache());
+  setTimeout(cacheIndicator, 30000);
+}
 
 async function getCachedData(cacheName = cacheBaseName) {
   const cacheStorage = await caches.open(cacheName);
@@ -72,5 +77,5 @@ export async function deleteOldCaches(cacheName = cacheBaseName) {
   }
 }
 function expiredCache() {
-  return Date.now() > (localStorage.getItem('cacheExpiry') || 1); // Invalidate if cache is over 3h old
+  return Date.now() > (Number(localStorage.getItem('cacheExpiry')) || 1); // Invalidate if cache is over 3h old
 }
