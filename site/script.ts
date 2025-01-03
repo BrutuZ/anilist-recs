@@ -531,9 +531,9 @@ function drawRec(rec: MediaRecommendation, index: number) {
   if (altTitles) {
     text = ce('p', { innerText: '• ' + altTitles });
     container.appendChild(text);
+    altTitlesPortait.appendChild(text);
   }
 
-  altTitlesPortait.appendChild(text);
   entry.appendChild(altTitlesPortait);
 
   // TITLES FOR LANDSCAPE
