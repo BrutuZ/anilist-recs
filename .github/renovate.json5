@@ -3,7 +3,7 @@
   "extends": [
     "config:recommended",
     "default:automergeBranchPush",
-    "group:all",
+    // "group:all",
     "schedule:automergeEarlyMondays",
   ],
   "automerge": true,
