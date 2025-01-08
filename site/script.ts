@@ -154,6 +154,7 @@ async function* fetchData(onList = false) {
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br, zstd',
   };
   if (settings.private) headers['Authorization'] = 'Bearer ' + jwt;
   for (let chunk = 1; chunk < 21; chunk++) {
