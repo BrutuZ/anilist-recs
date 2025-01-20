@@ -2,9 +2,6 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    "default:automergeBranchPush",
-    // "group:all",
-    "schedule:automergeEarlyMondays",
   ],
   "automerge": true,
   "automergeType": "branch",
