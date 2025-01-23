@@ -15,6 +15,10 @@
       "minimumReleaseAge": "1 week",
     }
   ],
+  "lockFileMaintenance":{
+    "enabled": true,
+    "automerge": true,
+  },
   "cdnurl": {
     "fileMatch": [
       "^\\.esbuild\\.mjs$"
