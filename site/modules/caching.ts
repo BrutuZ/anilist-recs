@@ -36,9 +36,8 @@ export async function getData(options = {}) {
 
 export function cacheIndicator() {
   const expired = expiredCache();
-  const cacheCountdown = new Date(
-    (Number(localStorage.getItem('cacheExpiry')) || Date.now()) - Date.now()
-  )
+  const expireTime = Number(localStorage.getItem('cacheExpiry'));
+  const cacheCountdown = new Date((expireTime || Date.now()) - Date.now())
     .toISOString()
     .slice(11, 16)
     .replace('00:', '')
@@ -46,13 +45,13 @@ export function cacheIndicator() {
   $('#cached > p').text(expired ? '' : `${cacheCountdown}m`);
   const cachedElem = $('#cached');
   cachedElem.toggleClass('expired', expired);
-  const events = cachedElem.data('events');
-  if (expired && !(events && events.click))
-    cachedElem.one('click', async () => {
-      await deleteOldCaches();
-      localStorage.removeItem('cacheExpiry');
-    });
-  if (!expired) setTimeout(cacheIndicator, 30000);
+  expireTime ? cachedElem.prop('hidden', true) : cachedElem.removeProp('hidden');
+  expired
+    ? cachedElem.one('click', async () => {
+        await deleteOldCaches();
+        localStorage.removeItem('cacheExpiry');
+      })
+    : setTimeout(cacheIndicator, 30000);
 }
 
 async function getCachedData(cacheName = cacheBaseName) {
