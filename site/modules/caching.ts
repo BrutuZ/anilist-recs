@@ -44,14 +44,14 @@ export function cacheIndicator() {
     .replace(':', 'h ');
   $('#cached > p').text(expired ? '' : `${cacheCountdown}m`);
   const cachedElem = $('#cached');
-  cachedElem.toggleClass('expired', expired);
-  expireTime ? cachedElem.prop('hidden', true) : cachedElem.removeProp('hidden');
+  expireTime ? cachedElem.removeAttr('hidden') : cachedElem.prop('hidden', true);
   expired
-    ? cachedElem.one('click', async () => {
+    ? cachedElem.addClass('expired').one('click', async () => {
         await deleteOldCaches();
         localStorage.removeItem('cacheExpiry');
+        cacheIndicator();
       })
-    : setTimeout(cacheIndicator, 30000);
+    : setTimeout(cacheIndicator, 30000) && cachedElem.removeAttr('class');
 }
 
 async function getCachedData(cacheName = cacheBaseName) {
@@ -84,5 +84,5 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
   }
 }
 function expiredCache() {
-  return Date.now() > (Number(localStorage.getItem('cacheExpiry')) || 1); // Invalidate if cache is over 3h old
+  return Date.now() > Number(localStorage.getItem('cacheExpiry') || '1'); // Invalidate if cache is over 3h old
 }
