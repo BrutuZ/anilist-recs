@@ -50,13 +50,9 @@ declare global {
     title: {
       romaji: string;
       english: string;
-      native: string;
     };
     id: number;
-    url: string;
-    cover: { medium: string };
-    countryOfOrigin: string;
-    isAdult: boolean;
+    cover: { large: string };
     recommendations: Recommendation;
   }
   interface Recommendation {
@@ -75,12 +71,11 @@ declare global {
     };
     synonyms: string[];
     id: number;
-    url: string;
     meanScore: number;
     popularity: number;
     status: string;
     tags: Tags[];
-    cover: { medium: string; large: string };
+    cover: { large: string };
     description: string;
     chapters: number | null;
     countryOfOrigin: string;
@@ -125,6 +120,7 @@ const qa = document.querySelectorAll.bind(document) as typeof document.querySele
 
 const DIV = '<div>',
   SPAN = '<span>',
+  mangaUrl = 'https://anilist.co/manga/',
   flags = { CN: '🇨🇳', KR: '🇰🇷', JP: '🇯🇵' },
   statusMap = {
     Ongoing: ['RELEASING', 'HIATUS'],
@@ -150,7 +146,7 @@ async function* fetchData(onList = false) {
   const user = validateUser();
   let perChunk = DEV ? 5 : 500; // onList ? 500 : 100;
   const recsSubQuery =
-    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id url: siteUrl meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{medium large}description chapters countryOfOrigin isAdult';
+    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{large}description chapters countryOfOrigin isAdult';
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -167,7 +163,7 @@ async function* fetchData(onList = false) {
         );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
-    const recsQuery = `${queryStart} status_in: [${settings.lists?.join()}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english native}id url: siteUrl cover: coverImage {medium}countryOfOrigin isAdult ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
+    const recsQuery = `${queryStart} status_in: [${settings.lists?.join()}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english}id cover: coverImage {large} ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;
     console.log('Fetching chunk', chunk);
     apiUrl.search = '';
     apiUrl.searchParams.set(user[0], user[1].replace(/^"|"$/g, ''));
@@ -219,9 +215,9 @@ function parseRecs(manga: Manga) {
       return;
     const recObj = {
       id: manga.id,
-      cover: manga.cover.medium,
+      cover: manga.cover.large,
       title: manga.title.english || manga.title.romaji,
-      url: manga.url,
+      url: mangaUrl + manga.id,
       rating: listEntry.rating,
     };
     const index = recs.findIndex(e => e.id == rec.id);
@@ -453,7 +449,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
     hidden: isFiltered(rec.tags),
   });
 
-  const linkParams = { target: '_blank', href: rec.url };
+  const linkParams = { target: '_blank', href: mangaUrl + rec.id };
   const imgParams = {
     loading: 'lazy',
     crossOrigin: 'anonymous',
