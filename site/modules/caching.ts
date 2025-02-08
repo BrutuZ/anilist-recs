@@ -52,7 +52,7 @@ export function cacheIndicator() {
       await deleteOldCaches();
       localStorage.removeItem('cacheExpiry');
     });
-  setTimeout(cacheIndicator, 30000);
+  if (!expired) setTimeout(cacheIndicator, 30000);
 }
 
 async function getCachedData(cacheName = cacheBaseName) {
