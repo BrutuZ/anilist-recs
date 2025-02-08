@@ -1,4 +1,4 @@
-import { deleteOldCaches, getData } from './modules/caching.js';
+import { cacheIndicator, getData } from './modules/caching.js';
 import { jwt, validateUser } from './modules/anilistAuth.js';
 
 DEV: new EventSource('/esbuild').addEventListener('change', e => {
@@ -137,7 +137,7 @@ export var userIgnored: number[] = [],
   wlTags: string[] = [],
   blTags: string[] = [],
   ignore: number[] = [];
-deleteOldCaches(); // Clear expired cache
+cacheIndicator();
 export var settings = settingsLoad();
 // lastEntry = undefined,
 
