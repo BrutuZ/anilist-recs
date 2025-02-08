@@ -4,7 +4,7 @@ const cacheBaseName = 'MangaRecs';
 // Try to get data from the cache, but fall back to fetching it live.
 export async function getData(options = {}) {
   const cacheName = cacheBaseName; //`${cacheBaseName}-${onList ? 'onList' : 'recs'}-${userName}`;
-  await deleteOldCaches(cacheName);
+  // await deleteOldCaches(cacheName);
   let cachedData = await getCachedData(cacheName);
 
   if (cachedData) {
@@ -42,7 +42,7 @@ export function cacheIndicator() {
     .slice(11, 16)
     .replace('00:', '')
     .replace(':', 'h ');
-  $('#cached > p').text(expired ? '' : `${cacheCountdown}m`);
+  $('#cached > p').text(expired ? 'Refresh Data' : `Cached for\n${cacheCountdown}m`);
   const cachedElem = $('#cached');
   expireTime ? cachedElem.removeAttr('hidden') : cachedElem.prop('hidden', true);
   expired
