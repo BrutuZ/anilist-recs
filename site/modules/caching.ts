@@ -42,7 +42,7 @@ export function cacheIndicator() {
     .slice(11, 16)
     .replace('00:', '')
     .replace(':', 'h ');
-  $('#cached > p').text(expired ? 'Refresh Data' : `Cached for\n${cacheCountdown}m`);
+  $('#cached > p').html(expired ? 'Refresh Data' : `Cached for<br />${cacheCountdown}m`);
   const cachedElem = $('#cached');
   expireTime ? cachedElem.removeAttr('hidden') : cachedElem.prop('hidden', true);
   expired

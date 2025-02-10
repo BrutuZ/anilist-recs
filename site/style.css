@@ -28,6 +28,7 @@ body {
   position: absolute;
   z-index: 2;
   fill: var(--color-button-bg);
+  max-width: 5em;
   text-align: center;
   &.expired {
     cursor: pointer;
@@ -103,8 +104,9 @@ button {
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   background-color: rgb(from var(--color-bg) r g b / 0.8);
+  padding: 0 2.5rem;
   top: 0;
-  width: 100%;
+  width: calc(100% - 5rem);
   z-index: 1;
 }
 
