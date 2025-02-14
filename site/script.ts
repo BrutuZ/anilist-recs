@@ -74,6 +74,7 @@ declare global {
     meanScore: number;
     popularity: number;
     status: string;
+    genres: string[];
     tags: Tags[];
     cover: { large: string };
     description: string;
@@ -146,7 +147,7 @@ async function* fetchData(onList = false) {
   const user = validateUser();
   let perChunk = DEV ? 5 : 500; // onList ? 500 : 100;
   const recsSubQuery =
-    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id meanScore popularity status tags{name isMediaSpoiler}cover: coverImage{large}description chapters countryOfOrigin isAdult';
+    'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id meanScore popularity status genres tags{name isMediaSpoiler}cover: coverImage{large}description chapters countryOfOrigin isAdult';
   const headers = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -200,6 +201,12 @@ async function* fetchData(onList = false) {
 function parseRecs(manga: Manga) {
   manga.recommendations.entries.forEach(listEntry => {
     const rec = listEntry.mediaRecommendation;
+    rec.tags = [
+      ...rec.genres.map(g => {
+        return { name: g, isMediaSpoiler: false };
+      }),
+      ...rec.tags,
+    ];
     // APPLY FILTERS
     if (
       !rec ||
