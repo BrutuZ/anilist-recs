@@ -145,7 +145,7 @@ async function* fetchData(onList = false) {
     throw new Error('No lists selected');
   }
   const user = validateUser();
-  let perChunk = DEV ? 5 : 500; // onList ? 500 : 100;
+  let perChunk = DEV ? 5 : 250; // onList ? 500 : 100;
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id meanScore popularity status genres tags{name isMediaSpoiler}cover: coverImage{large}description chapters countryOfOrigin isAdult';
   const headers = {
@@ -201,12 +201,6 @@ async function* fetchData(onList = false) {
 function parseRecs(manga: Manga) {
   manga.recommendations.entries.forEach(listEntry => {
     const rec = listEntry.mediaRecommendation;
-    rec.tags = [
-      ...rec.genres.map(g => {
-        return { name: g, isMediaSpoiler: false };
-      }),
-      ...rec.tags,
-    ];
     // APPLY FILTERS
     if (
       !rec ||
@@ -220,6 +214,12 @@ function parseRecs(manga: Manga) {
       // || e.rating < 1
     )
       return;
+    rec.tags = [
+      ...(rec.genres?.map(g => {
+        return { name: g, isMediaSpoiler: false };
+      }) || []),
+      ...(rec.tags || []),
+    ];
     const recObj = {
       id: manga.id,
       cover: manga.cover.large,
