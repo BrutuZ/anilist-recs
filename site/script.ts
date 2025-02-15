@@ -273,7 +273,7 @@ async function parseData() {
         case 'popularity':
           return b.popularity - a.popularity;
         case 'chapters':
-          return b.chapters || 0 - a.chapters || 0;
+          return Number(b.chapters) - Number(a.chapters);
         case 'recsTotal':
           return (
             b.recommended.map(r => r.rating).reduce((p, n) => p + n, 0) -
