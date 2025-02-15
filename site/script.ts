@@ -212,7 +212,9 @@ function parseRecs(manga: Manga) {
         return { name: g, isMediaSpoiler: false };
       }) || []),
       ...(rec.tags || []),
-    ];
+    ].filter((v, i, a) => {
+      return a.map(t => t.name).indexOf(v.name) === i;
+    });
     const recObj = {
       id: manga.id,
       cover: manga.cover.large,
