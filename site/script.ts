@@ -145,7 +145,7 @@ async function* fetchData(onList = false) {
     throw new Error('No lists selected');
   }
   const user = validateUser();
-  let perChunk = DEV ? 5 : 250; // onList ? 500 : 100;
+  let perChunk = DEV ? 5 : 500; // onList ? 500 : 100;
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id meanScore popularity status genres tags{name isMediaSpoiler}cover: coverImage{large}description chapters countryOfOrigin isAdult';
   const headers = {
@@ -155,13 +155,6 @@ async function* fetchData(onList = false) {
   };
   if (settings.private) headers['Authorization'] = 'Bearer ' + jwt;
   for (let chunk = 1; chunk < 21; chunk++) {
-    onList
-      ? message('(⓿' + '_'.repeat(chunk) + '⓿)', 'Stalking your profile ')
-      : message(
-          '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(chunk),
-          'Downloading Recommentations',
-          '(This may take a while)'
-        );
     const queryStart = `{collection: MediaListCollection(${user.join(':')} type: MANGA perChunk: ${perChunk} chunk: ${chunk} forceSingleCompletedList: true sort: UPDATED_TIME_DESC`;
     const onListQuery = `${queryStart}){hasNextChunk statuses: lists{status list: entries {manga: media {id}}}}}`;
     const recsQuery = `${queryStart} status_in: [${settings.lists?.join()}]){hasNextChunk statuses: lists{status list: entries {manga: media {title{romaji english}id cover: coverImage {large} ${recsSubQuery} ${settings.subRecs ? recsSubQuery + '}}}' : ''}}}}}}}}}`;

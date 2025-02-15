@@ -21,7 +21,6 @@ if (location.hash.search('access_token') !== -1) {
 }
 
 export function validateUser() {
-  if (DEV) return ['', ''];
   if (settings.private || $('#private').prop('checked')) {
     if (jwt) return ['userId', decodeJwt(jwt).sub];
     else {

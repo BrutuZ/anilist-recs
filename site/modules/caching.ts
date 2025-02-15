@@ -16,20 +16,7 @@ export async function getData(options = {}) {
   console.log('Fetching fresh data', apiUrl.search.slice(1));
 
   const cacheStorage = await caches.open(cacheName);
-  cachedData = await fetch(apiUrl, options).then(async response => {
-    if (!response.ok) {
-      message(
-        'Request failed!',
-        response.status.toString(),
-        response.statusText || (await response.json())?.errors?.at(0)?.message
-      );
-      return undefined;
-    }
-    cacheStorage
-      .put(apiUrl, response.clone())
-      .then(() => localStorage.setItem('cacheExpiry', (Date.now() + 10800000).toString())); // 3h
-    return response;
-  });
+  cachedData = await fetchWithProgress(apiUrl, options, cacheStorage);
   return cachedData;
 }
 // Get data from the cache.
@@ -85,4 +72,46 @@ async function deleteOldCaches(cacheName = cacheBaseName) {
 }
 function expiredCache() {
   return Date.now() > Number(localStorage.getItem('cacheExpiry') || '1'); // Invalidate if cache is over 3h old
+}
+
+async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) {
+  const response = await fetch(url, options);
+  const reader = response.clone().body.getReader();
+  const page = Number(url.searchParams.get('page'));
+  let receivedLength = 0;
+  let lastProgress = 0;
+  const chunks = [];
+  const progressSpan = '<span id="progress"></span>';
+  url.searchParams.has('lists')
+    ? message(
+        '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(page),
+        'Downloading Recommendations',
+        progressSpan
+      )
+    : message('(⓿' + '_'.repeat(page) + '⓿)', 'Stalking your profile ', progressSpan);
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    chunks.push(value);
+    receivedLength += value.length;
+    const progress = receivedLength / (1024 * 1024);
+    if (progress > lastProgress + 0.1) {
+      $('#progress').text(`Page ${page}: ${progress.toFixed(2)} MB`);
+      lastProgress = progress;
+    }
+  }
+  if (!response.ok) {
+    message(
+      'Request failed!',
+      response.status.toString(),
+      response.statusText || (await response.json())?.errors?.at(0)?.message
+    );
+    return undefined;
+  }
+  cache
+    .put(apiUrl, response.clone())
+    .then(() => localStorage.setItem('cacheExpiry', (Date.now() + 3 * 3600000).toString())); // 3h
+  return response;
 }
