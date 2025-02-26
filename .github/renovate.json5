@@ -4,13 +4,12 @@
     "config:recommended",
   ],
   "automerge": true,
-  "automergeType": "branch",
   "labels": ["Dependency"],
   "minimumReleaseAge": "1 week",
+  "pruneBranchAfterAutomerge": true,
   "packageRules": [
     {
       "automerge": true,
-      "automergeType": "branch",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "minimumReleaseAge": "1 week",
     }
