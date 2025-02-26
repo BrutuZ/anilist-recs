@@ -607,6 +607,7 @@ $(async () => {
   // Call API from login form
   $('#login').on('submit', async event => {
     event.preventDefault();
+    message('Processing...', 'ლ(╹◡╹ლ)');
     await parseData();
   });
 
