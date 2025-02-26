@@ -43,11 +43,7 @@ export function cacheIndicator() {
 
 async function getCachedData(cacheName = cacheBaseName) {
   const cacheStorage = await caches.open(cacheName);
-  const options = {
-    ignoreSearch: false,
-    ignoreMethod: true,
-    ignoreVary: true,
-  };
+  const options = { ignoreSearch: false, ignoreMethod: true, ignoreVary: true };
   let cachedData = await cacheStorage.match(apiUrl, options);
   if (!cachedData && apiUrl.searchParams.get('subRecs') === '0') {
     apiUrl.searchParams.set('subRecs', '1');
@@ -96,9 +92,10 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
     }
     chunks.push(value);
     receivedLength += value.length;
-    const progress = receivedLength / (1024 * 1024);
-    if (progress > lastProgress + 0.1) {
-      $('#progress').text(`Page ${page}: ${progress.toFixed(2)} MB`);
+    const isMB = receivedLength > 1024 * 1024;
+    const progress = receivedLength / (isMB ? 1024 * 1024 : 1024);
+    if (progress > lastProgress + (isMB ? 0.1 : 5)) {
+      $('#progress').text(`Page ${page}: ${progress.toFixed(2)}` + (isMB ? 'MB' : 'KB'));
       lastProgress = progress;
     }
   }
