@@ -9,8 +9,7 @@ DEV: new EventSource('/esbuild').addEventListener('change', e => {
       const url = new URL(link.href);
 
       if (url.host === location.host && url.pathname === updated[0]) {
-        // @ts-ignore
-        const next: HTMLLinkElement = link.cloneNode();
+        const next = link.cloneNode() as HTMLLinkElement;
         next.href = updated[0] + '?' + Math.random().toString(36).slice(2);
         next.onload = () => link.remove();
         link.parentNode.insertBefore(next, link.nextSibling);
@@ -241,13 +240,12 @@ async function parseData() {
   settings = settingsSave();
   ignore = [...userIgnored];
   try {
-    // @ts-ignore
-    for await (const chunk of fetchData(true)) ignore.push(...chunk);
+    for await (const chunk of fetchData(true)) ignore.push(...(chunk as number[]));
   } catch {
     return;
   }
-  console.log('Ignored entries:', ignore); // @ts-ignore
-  for await (const chunk of fetchData(false)) data.push(...chunk);
+  console.log('Ignored entries:', ignore);
+  for await (const chunk of fetchData(false)) data.push(...(chunk as Manga[]));
   console.log('Reading list:', data);
   recs.length = 0;
 
@@ -257,6 +255,7 @@ async function parseData() {
   console.log('Recommendations:', recs);
 
   console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
+  message('(▀̿Ĺ̯▀̿ ̿)', 'Getting nerdy with the data');
   console.time('Mapping Recommendations');
   const elems = recs
     .sort((a, b) => {
@@ -287,7 +286,6 @@ async function parseData() {
       }
     })
     .map(drawRec);
-  message('(▀̿Ĺ̯▀̿ ̿)', 'Getting nerdy with the data');
   console.timeEnd('Mapping Recommendations');
   console.time('Drawing Recommendations');
   $('.content').empty().append(elems);
@@ -425,8 +423,10 @@ function fadeCovers(ids: string[], hideEntries: boolean = false) {
 function isFiltered(tags: Array<Tags | string>) {
   const recTags =
     typeof tags[0] === 'string'
-      ? tags // @ts-ignore
-      : tags?.filter(tag => (settings.spoilers ? !tag.isMediaSpoiler : true)).map(tag => tag.name);
+      ? tags
+      : tags
+          ?.filter((tag: Tags) => (settings.spoilers ? !tag.isMediaSpoiler : true))
+          .map((tag: Tags) => tag.name);
   return blTags?.some(b => recTags.includes(b)) || !wlTags?.every(w => recTags.includes(w));
 }
 
