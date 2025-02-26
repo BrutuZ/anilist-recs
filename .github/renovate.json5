@@ -5,14 +5,12 @@
   ],
   "automerge": true,
   "automergeType": "branch",
-  "platformAutomerge": false,
   "labels": ["Dependency"],
   "minimumReleaseAge": "1 week",
   "packageRules": [
     {
       "automerge": true,
       "automergeType": "branch",
-      "platformAutomerge": false,
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
       "minimumReleaseAge": "1 week",
     }
@@ -20,7 +18,6 @@
   "lockFileMaintenance":{
     "enabled": true,
     "automerge": true,
-    "platformAutomerge": false,
   },
   "cdnurl": {
     "fileMatch": [
