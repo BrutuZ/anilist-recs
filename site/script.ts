@@ -607,8 +607,7 @@ $(async () => {
   // Call API from login form
   $('#login').on('submit', async event => {
     event.preventDefault();
-    message('Processing...', 'ლ(╹◡╹ლ)');
-    await parseData();
+    $('#filters').trigger('click');
   });
 
   $('#private').on('change', e => {
@@ -616,7 +615,10 @@ $(async () => {
     $('#username').show();
   });
   // Refilter on settings change
-  $('#filters').on('click', async () => await parseData());
+  $('#filters').on('click', async () => {
+    message('Processing...', 'ლ(╹◡╹ლ)');
+    await parseData();
+  });
   if (DEV) await parseData();
 
   // Back to Top button
