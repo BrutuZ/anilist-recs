@@ -508,6 +508,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
     : rec.title.romaji;
 
   container = ce('a', { href: '#aid-' + rec.id, target: '_self' });
+  container.addEventListener('click', () => copyTitle(entryTitle));
   text = ce('h3', {
     className: settings.englishTitles && rec.title.english ? 'licensed' : null,
     innerText: (rec.isAdult ? '🔞' : '') + flags[rec.countryOfOrigin] + ' ' + entryTitle,
@@ -538,9 +539,12 @@ function drawRec(rec: MediaRecommendation, index: number) {
   // TITLES FOR LANDSCAPE
   const titlesLandscape = ce('div', { className: 'titles' });
   container = ce('div');
-  entry
-    .querySelectorAll('.title a, .alt-titles p')
-    .forEach(node => container.appendChild(node.cloneNode(true)));
+  $(entry)
+    .find('.title a')
+    .clone(true)
+    .on('click', () => copyTitle(entryTitle))
+    .appendTo(container);
+  $(entry).find('.alt-titles p').clone().appendTo(container);
   titlesLandscape.appendChild(container);
 
   entry.appendChild(titlesLandscape);
@@ -569,6 +573,12 @@ function drawRec(rec: MediaRecommendation, index: number) {
   entry.appendChild(ignoreBtn);
 
   return entry;
+}
+
+function copyTitle(entryTitle: string) {
+  navigator.clipboard
+    .writeText(entryTitle)
+    .then(_ => toast(`Title copied to clipboard\n'${entryTitle}'`));
 }
 
 function ignoreEntry(this: HTMLElement) {
