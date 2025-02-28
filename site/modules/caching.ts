@@ -71,8 +71,6 @@ function expiredCache() {
 }
 
 async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) {
-  const response = await fetch(url, options);
-  const reader = response.clone().body.getReader();
   const page = Number(url.searchParams.get('page'));
   let receivedLength = 0;
   let lastProgress = 0;
@@ -85,6 +83,8 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
         progressSpan
       )
     : message('(⓿' + '_'.repeat(page) + '⓿)', 'Stalking your profile ', progressSpan);
+  const response = await fetch(url, options);
+  const reader = response.clone().body.getReader();
   while (true) {
     const { done, value } = await reader.read();
     if (done) {
