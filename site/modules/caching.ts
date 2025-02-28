@@ -92,9 +92,9 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
     }
     chunks.push(value);
     receivedLength += value.length;
-    const isMB = receivedLength > 1024 * 1024;
-    const progress = receivedLength / (isMB ? 1024 * 1024 : 1024);
-    if (progress > lastProgress + (isMB ? 0.1 : 5)) {
+    const isMB = receivedLength > 1048576;
+    const progress = receivedLength / (isMB ? 1048576 : 1024);
+    if (progress > lastProgress + (isMB ? 0.1 : 5) || progress < lastProgress) {
       $('#progress').text(`Page ${page}: ${progress.toFixed(2)}` + (isMB ? 'MB' : 'KB'));
       lastProgress = progress;
     }
