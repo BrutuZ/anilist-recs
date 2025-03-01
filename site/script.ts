@@ -594,7 +594,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
 function copyTitle(entryTitle: string) {
   navigator.clipboard
     .writeText(entryTitle)
-    .then(_ => toast(`Title copied to clipboard\n'${entryTitle}'`));
+    .then(() => toast(`Title copied to clipboard '${entryTitle}'`));
 }
 
 function ignoreEntry(this: HTMLElement) {

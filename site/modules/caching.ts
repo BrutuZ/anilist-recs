@@ -99,12 +99,13 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
   let receivedLength = 0;
   let lastProgress = 0;
   const chunks = [];
-  const progressSpan = `<span id="progress">Page ${page}: 0.00 KB</span>`;
+  const progressSpan = `<span id="progress">Requesting page ${page}...</span>`;
   url.searchParams.has('lists')
     ? message(
         '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(page),
-        'Downloading Recommendations',
-        progressSpan
+        'Digging Recommendations',
+        progressSpan,
+        '(These can be large and take a while)'
       )
     : message('(⓿' + '_'.repeat(page) + '⓿)', 'Stalking your profile ', progressSpan);
   const response = await fetch(url, options);
