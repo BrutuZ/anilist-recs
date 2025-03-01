@@ -75,7 +75,7 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
   let receivedLength = 0;
   let lastProgress = 0;
   const chunks = [];
-  const progressSpan = '<span id="progress"></span>';
+  const progressSpan = `<span id="progress">Page ${page}: 0.00 KB</span>`;
   url.searchParams.has('lists')
     ? message(
         '(∪.∪ ) .' + 'z<sup>z</sup>'.repeat(page),
@@ -95,7 +95,7 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
     const isMB = receivedLength > 1048576;
     const progress = receivedLength / (isMB ? 1048576 : 1024);
     if (progress > lastProgress + (isMB ? 0.1 : 5) || progress < lastProgress) {
-      $('#progress').text(`Page ${page}: ${progress.toFixed(2)}` + (isMB ? 'MB' : 'KB'));
+      $('#progress').text(`Page ${page}: ${progress.toFixed(2)} ` + (isMB ? 'MB' : 'KB'));
       lastProgress = progress;
     }
   }
