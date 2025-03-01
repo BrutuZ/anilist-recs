@@ -29,6 +29,22 @@ declare global {
     attrs(attributes: object): HTMLElement;
   }
 
+  interface SettingsObj {
+    username: string;
+    private: number;
+    englishTitles: number;
+    licensed: number;
+    subRecs: number;
+    spoilers: number;
+    fade: number;
+    minScore: number;
+    sortMode: string;
+    adult: string;
+    status: string;
+    lists: string[];
+    country: string[];
+  }
+
   interface MediaListCollection {
     data: {
       collection: {
@@ -162,7 +178,7 @@ async function* fetchData(onList = false) {
     apiUrl.searchParams.set(user[0], user[1].replace(/^"|"$/g, ''));
     if (!onList) {
       apiUrl.searchParams.set('lists', settings.lists?.join());
-      apiUrl.searchParams.set('subRecs', settings.subRecs);
+      apiUrl.searchParams.set('subRecs', settings.subRecs.toString());
     }
     apiUrl.searchParams.set('page', chunk.toString());
     const response: MediaListCollection = DEV
@@ -661,7 +677,7 @@ function scrollHandler() {
 function cleanTagPrompt() {
   $('#tag-filter').remove();
 }
-function settingsLoad() {
+function settingsLoad(): SettingsObj {
   const savedSettings = JSON.parse(localStorage.getItem('settings') || '{}');
   $.each(savedSettings, (key: string, value: string) => {
     const id = `#${key}`;
@@ -705,7 +721,7 @@ function settingsSave() {
   });
   console.log('Saving settings:', savedSettings);
   localStorage.setItem('settings', JSON.stringify(savedSettings));
-  return savedSettings;
+  return savedSettings as SettingsObj;
 }
 
 export function message(..._line: string[]) {
