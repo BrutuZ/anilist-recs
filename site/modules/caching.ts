@@ -45,11 +45,35 @@ async function getCachedData(cacheName = cacheBaseName) {
   const cacheStorage = await caches.open(cacheName);
   const options = { ignoreSearch: false, ignoreMethod: true, ignoreVary: true };
   let cachedData = await cacheStorage.match(apiUrl, options);
-  if (!cachedData && apiUrl.searchParams.get('subRecs') === '0') {
-    apiUrl.searchParams.set('subRecs', '1');
-    cachedData = await cacheStorage.match(apiUrl, options);
-    if (!cachedData) apiUrl.searchParams.set('subRecs', '0');
-    else console.log('Found cache with extra information. Reduce, Reuse, Recycle!');
+  if (!cachedData) {
+    const keys = (await cacheStorage.keys())
+      .map(r => r.url)
+      .filter(u => u.includes(`page=${apiUrl.searchParams.get('page')}`));
+
+    if (!settings.subRecs && keys.some(k => k.includes('subRecs=1'))) {
+      cachedData = await cacheStorage.match(
+        apiUrl.toString().replace('subRecs=0', 'subRecs=1'),
+        options
+      );
+    }
+
+    if (settings.lists.length < 3) {
+      for (const cachedUrl in keys.filter(k => settings.lists.every(l => k.includes(l)))) {
+        cachedData = await cacheStorage.match(cachedUrl, options);
+        if (
+          !cachedData &&
+          cachedUrl.includes('subRecs=1') &&
+          apiUrl.searchParams.get('subRecs') == '0'
+        )
+          cachedData = await cacheStorage.match(
+            cachedUrl.replace('subRecs=0', 'subRecs=1'),
+            options
+          );
+        if (cachedData) break;
+      }
+    }
+
+    if (cachedData) console.log('Found cache with extra information. Reduce, Reuse, Recycle!');
   }
   return cachedData;
 }
