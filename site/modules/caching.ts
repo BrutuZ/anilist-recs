@@ -1,4 +1,4 @@
-import { apiUrl, message } from '../script';
+import { apiUrl, message, qe, settings } from '../script';
 
 const cacheBaseName = 'MangaRecs';
 // Try to get data from the cache, but fall back to fetching it live.
@@ -105,7 +105,7 @@ async function fetchWithProgress(url: URL, options: RequestInit, cache?: Cache) 
       response.status.toString(),
       response.statusText || (await response.json())?.errors?.at(0)?.message
     );
-    return undefined;
+    throw new Error(qe('.content').textContent);
   }
   cache
     .put(apiUrl, response.clone())

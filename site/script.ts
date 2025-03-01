@@ -109,14 +109,14 @@ HTMLElement.prototype.attrs = function (o) {
   return this;
 };
 
-function ce(element: string, params?: object): HTMLElement {
+export function ce(element: string, params?: object): HTMLElement {
   const e = document.createElement(element);
   if (params) e.attrs(params);
   return e;
 }
 
-const qe = document.querySelector.bind(document) as typeof document.querySelector;
-const qa = document.querySelectorAll.bind(document) as typeof document.querySelectorAll;
+export const qe = document.querySelector.bind(document) as typeof document.querySelector;
+export const qa = document.querySelectorAll.bind(document) as typeof document.querySelectorAll;
 
 const DIV = '<div>',
   SPAN = '<span>',
