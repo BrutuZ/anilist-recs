@@ -643,6 +643,7 @@ $(async () => {
   // Refilter on settings change
   $('#filters').on('click', async () => {
     message('Processing...', 'ლ(╹◡╹ლ)');
+    qe('.header').textContent = '';
     await parseData();
   });
   if (DEV) await parseData();
