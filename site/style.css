@@ -371,8 +371,8 @@ img {
   margin: 0;
   position: relative;
   text-align: justify;
-  top: 50%;
-  transform: translateY(-50%);
+  /* top: 50%;
+  transform: translateY(-50%); */
 }
 .title > div > p,
 .details > div > p {
