@@ -7,6 +7,7 @@
   "automergeType": "branch",
   "labels": ["Dependency"],
   "minimumReleaseAge": "1 week",
+  "platformAutomerge": false,
   "pruneBranchAfterAutomerge": true,
   "packageRules": [
     {
@@ -26,6 +27,7 @@
     "enabled": true,
     "automerge": true,
     "automergeType": "branch",
+    "ignoreTests": true,
   },
   "cdnurl": {
     "fileMatch": [
