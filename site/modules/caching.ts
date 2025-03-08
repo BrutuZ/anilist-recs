@@ -33,7 +33,7 @@ export function cacheIndicator() {
   const cachedElem = $('#cached');
   expireTime ? cachedElem.removeAttr('hidden') : cachedElem.prop('hidden', true);
   expired
-    ? cachedElem.addClass('expired').one('click', async () => {
+    ? cachedElem.addClass('enabled').one('click', async () => {
         await deleteOldCaches();
         localStorage.removeItem('cacheExpiry');
         cacheIndicator();

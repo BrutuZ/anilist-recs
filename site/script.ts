@@ -144,7 +144,7 @@ const DIV = '<div>',
   };
 export const apiUrl = new URL('https://graphql.anilist.co'),
   data: Manga[] = [],
-  recs: MediaRecommendation[] = [];
+  recs: { id?: MediaRecommendation } = {};
 export var userIgnored: number[] = [],
   wlTags: string[] = [],
   blTags: string[] = [],
@@ -152,6 +152,7 @@ export var userIgnored: number[] = [],
 cacheIndicator();
 export var settings = settingsLoad();
 // lastEntry = undefined,
+if (DEV) window['script'] = { data: data, recs: recs };
 
 async function* fetchData(onList = false) {
   settingsSave();
@@ -212,7 +213,6 @@ function parseRecs(manga: Manga) {
     // APPLY FILTERS
     if (
       !rec ||
-      ignore.includes(rec.id) ||
       rec.isAdult == $('#adult').prop('selectedIndex') ||
       rec.meanScore < Number($('#minScore').val()) ||
       (settings.country.length > 0 && !settings.country?.includes(rec.countryOfOrigin)) ||
@@ -237,17 +237,16 @@ function parseRecs(manga: Manga) {
       url: mangaUrl + manga.id,
       rating: listEntry.rating,
     };
-    const index = recs.findIndex(e => e.id == rec.id);
-    if (index > -1) {
-      recs[index].recommended.push(recObj);
+    if (recs[rec.id] !== undefined) {
+      recs[rec.id].recommended.push(recObj);
       return;
     } else {
       rec.recommended = [recObj];
-      rec.filtered = isFiltered(rec.tags);
-      recs.push(rec);
-      if (settings.subRecs && rec.recommendations) {
-        parseRecs(rec);
-      }
+      rec.filtered = isFiltered(rec);
+      recs[rec.id] = rec;
+    }
+    if (settings.subRecs && rec.recommendations) {
+      parseRecs(rec);
     }
   });
 }
@@ -263,7 +262,7 @@ async function parseData() {
   console.log('Ignored entries:', ignore);
   for await (const chunk of fetchData(false)) data.push(...(chunk as Manga[]));
   console.log('Reading list:', data);
-  recs.length = 0;
+  Object.keys(recs).forEach(k => delete recs[k]);
 
   console.time('Parsing Recommendations');
   data.forEach(manga => parseRecs(manga));
@@ -271,9 +270,8 @@ async function parseData() {
   console.log('Recommendations:', recs);
 
   console.log('Whitelist:', wlTags, 'Blacklist:', blTags);
-  message('(▀̿Ĺ̯▀̿ ̿)', 'Getting nerdy with the data');
   console.time('Mapping Recommendations');
-  const elems = recs
+  const elems = Object.values(recs)
     .sort((a, b) => {
       switch (settings.sortMode) {
         case 'default':
@@ -314,7 +312,50 @@ async function parseData() {
     console.timeEnd('Fading Covers');
   }
   recsCounter();
+  drawEntryBlacklist();
   console.log('Parsed!');
+}
+
+async function drawEntryBlacklist() {
+  $('#hidden-entries').empty();
+  userIgnored.forEach(id => {
+    const entry = recs[id];
+    console.log(id, entry);
+    if (entry === undefined) {
+      console.log('Could not find', id);
+      return;
+    }
+    const img = ce('img', {
+      loading: 'lazy',
+      crossOrigin: 'anonymous',
+      referrerPolicy: 'no-referrer',
+      width: 75,
+      src: entry.cover.large,
+      title: entry.title.romaji,
+      alt: entry.title.romaji,
+      className: 'subrec',
+      onclick: () => {
+        userIgnored.splice(userIgnored.indexOf(id), 1);
+        userIgnored.length
+          ? localStorage.setItem('ignored', userIgnored.toString())
+          : localStorage.removeItem('ignored');
+        const filtered = isFiltered(recs[id]);
+        $(`#aid-${id}`).prop('hidden', filtered);
+        $(`a[data-id='${id}']`)
+          .prop('hidden', filtered)
+          .closest('.entry[hidden]')
+          .each((_, e) => {
+            if (!isFiltered(recs[e.dataset.id])) {
+              e.removeAttribute('hidden');
+              e.classList.remove('faded');
+            }
+          });
+        img.remove();
+        recsCounter();
+      },
+    });
+    $('#hidden-entries').append(img);
+  });
 }
 
 async function recsCounter() {
@@ -324,7 +365,7 @@ async function recsCounter() {
   const element = qe('.header');
   element.innerHTML = text;
   console.timeEnd('Counter');
-  if (DEV) console.log('Counted recs', text, recs.filter(r => !r.filtered).length);
+  if (DEV) console.log('Counted recs', text, Object.values(recs).filter(r => !r.filtered).length);
   if (element.getBoundingClientRect().top < 0) toast(text);
 }
 
@@ -392,8 +433,8 @@ function filterTag(this: HTMLDivElement, ev: MouseEvent) {
     console.timeEnd('Styled tags');
     const changed = [];
     console.time('Filtered changed');
-    recs.forEach(r => {
-      if (r.filtered != isFiltered(r.tags)) {
+    Object.values(recs).forEach(r => {
+      if (r.filtered != isFiltered(r)) {
         changed.push(r.id.toString());
         r.filtered = !r.filtered;
       }
@@ -436,14 +477,16 @@ function fadeCovers(ids: string[], hideEntries: boolean = false) {
   return elements;
 }
 
-function isFiltered(tags: Array<Tags | string>) {
-  const recTags =
-    typeof tags[0] === 'string'
-      ? tags
-      : tags
-          ?.filter((tag: Tags) => (settings.spoilers ? !tag.isMediaSpoiler : true))
-          .map((tag: Tags) => tag.name);
-  return blTags?.some(b => recTags.includes(b)) || !wlTags?.every(w => recTags.includes(w));
+function isFiltered(entry: MediaRecommendation) {
+  const recTags = entry.tags
+    ?.filter((tag: Tags) => (settings.spoilers ? !tag.isMediaSpoiler : true))
+    .map((tag: Tags) => tag.name);
+  return (
+    blTags?.some(b => recTags.includes(b)) ||
+    !wlTags?.every(w => recTags.includes(w)) ||
+    userIgnored.includes(entry.id) ||
+    entry.recommended.every(r => userIgnored.includes(r.id))
+  );
 }
 
 function appendTag(tag: string) {
@@ -457,14 +500,16 @@ function appendTag(tag: string) {
 }
 
 function drawRec(rec: MediaRecommendation, index: number) {
-  if (index == 0 || index == recs.length - 1)
-    console.log('Handling entry', index + 1, 'of', recs.length);
+  if (userIgnored.includes(rec.id)) console.log('Skipped', rec.id);
+  if (ignore.includes(rec.id)) return null;
+  if (index == 0 || index == Object.keys(recs).length - 1)
+    console.log('Handling entry', index + 1, 'of', Object.keys(recs).length);
 
   const entry = ce('div', {
     id: 'aid-' + rec.id,
     className: 'entry',
     dataset: { id: rec.id },
-    hidden: isFiltered(rec.tags),
+    hidden: isFiltered(rec),
   });
 
   const linkParams = { target: '_blank', href: mangaUrl + rec.id };
@@ -503,6 +548,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
       href: ignored ? origin.url : '#aid-' + origin.id,
       target: ignored ? '_blank' : '_self',
       dataset: { id: origin.id },
+      hidden: userIgnored.includes(origin.id) ? true : false,
     });
     container.appendChild(
       ce('img', imgParams).attrs({
@@ -617,12 +663,15 @@ function ignoreEntry(this: HTMLElement) {
     userIgnored.push(id);
     localStorage.setItem('ignored', userIgnored.toString());
     console.log('Ignored', entryTitle);
-    this.parentElement.remove();
-    $(`a[data-id='${id}']`).each((_, e) => {
-      $(e).siblings().length ? e.remove() : $(e).closest('.entry').remove();
+    this.parentElement.hidden = true;
+    $(`[data-id="${id}"]`).prop('hidden', true);
+    $(`a[data-id="${id}"]`).each((_, e) => {
+      const je = $(e);
+      if (!je.siblings(':not([hidden])').length) je.closest('.entry').prop('hidden', true);
     });
     modal.remove();
     recsCounter();
+    drawEntryBlacklist();
   });
   content.append(text, this.parentNode.querySelector('.cover img').cloneNode(), btnYes, btnNo);
   modal.append(content);
@@ -642,7 +691,7 @@ $(async () => {
   });
   // Refilter on settings change
   $('#filters').on('click', async () => {
-    message('Processing...', 'ლ(╹◡╹ლ)');
+    message('(▀̿Ĺ̯▀̿ ̿)', 'Getting nerdy with the data');
     qe('.header').textContent = '';
     await parseData();
   });
@@ -650,6 +699,9 @@ $(async () => {
 
   // Back to Top button
   $('#top').on('click', () => scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // Filter panel
+  $('#panel-button').on('click', () => $('#active-filters').toggleClass('active'));
 
   // Scroll Handler for Pagination
   $(document).on('scroll', scrollHandler);
@@ -663,9 +715,10 @@ $(async () => {
 
 function scrollHandler() {
   $('#top').toggleClass('collapsed', scrollY < visualViewport.height * 1.1);
-  $('.settings').get(0).getBoundingClientRect().top < 0
-    ? $('#active-tags').css('position', 'fixed')
-    : $('#active-tags').removeAttr('style');
+  $('#active-filters').removeClass('active');
+  // $('.settings').get(0).getBoundingClientRect().top < 0
+  //   ? $('#active-tags').css('position', 'fixed')
+  //   : $('#active-tags').removeAttr('style');
   cleanTagPrompt();
 
   // TODO:
