@@ -114,8 +114,11 @@ button {
   -webkit-backdrop-filter: blur(4px);
   background-color: rgb(from var(--color-bg) r g b / 0.8);
   left: 100%;
-  padding: 0 2.5rem;
+  max-height: 100vh;
+  overflow: auto;
+  padding-right: 1rem;
   position: fixed;
+  scrollbar-width: thin;
   top: 0;
   transition: transform 0.6s ease-out 0.1s;
   width: 25%;
