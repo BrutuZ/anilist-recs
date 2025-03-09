@@ -458,6 +458,9 @@ img {
     left: 5%;
     width: 90%;
   }
+  #active-filters {
+    width: 50%;
+  }
   .entry {
     grid-template-areas: 'title' 'cover' 'sources' 'alt-titles' 'details';
     grid-template-columns: auto;
