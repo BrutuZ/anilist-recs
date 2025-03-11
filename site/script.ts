@@ -100,6 +100,7 @@ declare global {
     recommendations: Recommendation;
     recommended: SlimRecommendations[];
     filtered: boolean;
+    index: number;
   }
   interface Tags {
     name: string;
@@ -241,6 +242,7 @@ function parseRecs(manga: Manga) {
     } else {
       rec.recommended = [recObj];
       rec.filtered = isFiltered(rec);
+      rec.index = Object.keys(recs).length;
       recs[rec.id] = rec;
     }
     if (settings.subRecs && rec.recommendations) {
@@ -274,7 +276,7 @@ async function parseData() {
       switch (settings.sortMode) {
         case 'default':
         default:
-          return 0;
+          return a.index - b.index;
         case 'score':
           return b.meanScore - a.meanScore;
         case 'publishing':
