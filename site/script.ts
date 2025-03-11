@@ -151,8 +151,6 @@ export var userIgnored: number[] = [],
   ignore: number[] = [];
 cacheIndicator();
 export var settings = settingsLoad();
-// lastEntry = undefined,
-if (DEV) window['script'] = { data: data, recs: recs };
 
 async function* fetchData(onList = false) {
   settingsSave();

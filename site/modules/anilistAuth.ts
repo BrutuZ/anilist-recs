@@ -1,8 +1,17 @@
-import Cookies from 'js-cookie';
-import { decodeJwt } from 'jose';
+import type * as types from '../../node_modules/jose/dist/types/types.d.ts';
 import { message, settings } from '../script';
 
-export var jwt = Cookies.get('jwt') || localStorage.getItem('jwt');
+declare global {
+  interface Window {
+    jose: {
+      decodeJwt<PayloadType = types.JWTPayload>(jwt: string): PayloadType & types.JWTPayload;
+    };
+  }
+}
+
+const cookie = window.Cookies;
+const decodeJwt = window.jose.decodeJwt;
+export var jwt = cookie.get('jwt') || localStorage.getItem('jwt');
 
 // vvv AUTHENTICATION vvv
 // Check if authentication is saved and clear if expired
@@ -14,7 +23,7 @@ if (location.hash.search('access_token') !== -1) {
   url.hash = '';
   jwt = url.searchParams.get('access_token');
   // localStorage.setItem('jwt', jwt);
-  Cookies.set('jwt', jwt, { expires: new Date(decodeJwt(jwt).exp * 1000) });
+  cookie.set('jwt', jwt, { expires: new Date(decodeJwt(jwt).exp * 1000) });
   url.search = '';
   history.replaceState(null, '', url.toString());
   message('(⌐■_■)', 'Authenticated with AniList');

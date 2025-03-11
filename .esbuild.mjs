@@ -15,7 +15,8 @@ const build = await esbuild.context({
   bundle: true,
   outbase: 'site',
   outdir: 'build',
-  format: 'esm',
+  format: 'iife',
+  treeShaking: true,
   globalName: 'script',
   loader: {
     '.html': 'copy',
@@ -28,9 +29,8 @@ const build = await esbuild.context({
     '.xml': 'copy',
   },
   platform: 'browser',
+  packages: 'bundle',
   alias: {
-    jose: 'https://cdnjs.cloudflare.com/ajax/libs/jose/5.9.6/util/decode_jwt.js',
-    'js-cookie': 'https://cdnjs.cloudflare.com/ajax/libs/js-cookie/3.0.5/js.cookie.mjs',
     select2css: 'node_modules/select2/dist/css/select2.css',
   },
 });
