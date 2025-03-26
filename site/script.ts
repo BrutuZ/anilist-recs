@@ -304,13 +304,6 @@ async function parseData() {
   console.time('Drawing Recommendations');
   $('.content').empty().append(elems);
   console.timeEnd('Drawing Recommendations');
-  if (settings.fade) {
-    console.time('Fading Covers');
-    fadeCovers(
-      Array.from(qa('.content > .entry[hidden]')).map(e => (e as HTMLDivElement).dataset.id)
-    );
-    console.timeEnd('Fading Covers');
-  }
   recsCounter();
   drawEntryBlacklist();
   console.log('Parsed!');
@@ -478,15 +471,15 @@ function fadeCovers(ids: string[], hideEntries: boolean = false) {
 }
 
 function isFiltered(entry: MediaRecommendation) {
-  const recTags = entry.tags
+  const recTags = entry?.tags
     ?.filter((tag: Tags) => (settings.spoilers ? !tag.isMediaSpoiler : true))
     .map((tag: Tags) => tag.name);
-  return (
-    blTags?.some(b => recTags.includes(b)) ||
-    !wlTags?.every(w => recTags.includes(w)) ||
-    userIgnored.includes(entry.id) ||
-    entry.recommended.every(r => userIgnored.includes(r.id))
-  );
+  return recTags
+    ? blTags?.some(b => recTags.includes(b)) ||
+        !wlTags?.every(w => recTags.includes(w)) ||
+        userIgnored.includes(entry.id) ||
+        entry.recommended.every(r => userIgnored.includes(r.id))
+    : false;
 }
 
 function appendTag(tag: string) {
@@ -548,7 +541,8 @@ function drawRec(rec: MediaRecommendation, index: number) {
       href: ignored ? origin.url : '#aid-' + origin.id,
       target: ignored ? '_blank' : '_self',
       dataset: { id: origin.id },
-      hidden: userIgnored.includes(origin.id) ? true : false,
+      hidden: userIgnored.includes(origin.id),
+      className: isFiltered(recs[origin.id]) ? 'faded' : null,
     });
     container.appendChild(
       ce('img', imgParams).attrs({
