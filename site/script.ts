@@ -655,9 +655,9 @@ function ignoreEntry(this: HTMLElement) {
   const text = ce('p', {
     innerText: 'Always ignore\n' + entryTitle + '\nand its recommendations in the future?',
   });
-  const btnNo = ce('button', { innerText: 'No' });
+  const btnNo = ce('button', { innerText: 'No', className: 'rejected' });
   btnNo.addEventListener('click', () => modal.remove());
-  const btnYes = ce('button', { innerText: 'Yes' });
+  const btnYes = ce('button', { innerText: 'Yes', className: 'filtered' });
   btnYes.addEventListener('click', () => {
     ignore.push(id);
     userIgnored.push(id);

@@ -437,13 +437,14 @@ img {
   display: inline-block;
   margin: 0.25em;
   padding: 0.25em;
-  &.filtered {
-    background-color: var(--color-tag-active);
-  }
-  &.rejected {
-    background-color: var(--color-tag-rejected);
-    color: var(--color-tag);
-  }
+}
+.filtered {
+  background-color: var(--color-tag-active);
+  color: var(--color-tag-text);
+}
+.rejected {
+  background-color: var(--color-tag-rejected);
+  color: var(--color-tag);
 }
 
 /* PORTRAIT OVERRIDES */
