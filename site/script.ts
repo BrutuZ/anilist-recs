@@ -542,7 +542,7 @@ function drawRec(rec: MediaRecommendation, index: number) {
       target: ignored ? '_blank' : '_self',
       dataset: { id: origin.id },
       hidden: userIgnored.includes(origin.id),
-      className: isFiltered(recs[origin.id]) ? 'faded' : null,
+      className: settings.fade && isFiltered(recs[origin.id]) ? 'faded' : null,
     });
     container.appendChild(
       ce('img', imgParams).attrs({
