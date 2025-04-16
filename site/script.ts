@@ -160,7 +160,7 @@ async function* fetchData(onList = false) {
     throw new Error('No lists selected');
   }
   const user = validateUser();
-  let perChunk = DEV ? 5 : 100; // onList ? 500 : 100;
+  let perChunk = DEV ? 5 : onList ? 500 : 100;
   const recsSubQuery =
     'recommendations(sort: RATING_DESC){entries: nodes{rating mediaRecommendation{title{romaji english native}synonyms id meanScore popularity status genres tags{name isMediaSpoiler}cover: coverImage{large}description chapters countryOfOrigin isAdult';
   const headers = {
