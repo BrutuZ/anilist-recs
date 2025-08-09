@@ -4,7 +4,7 @@
   "dependencies": {
     "esbuild": "~0.25.0",
     "select2": "~4.1.0-rc.0",
-    "typescript": "~5.8.0"
+    "typescript": "~5.9.0"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.32",
