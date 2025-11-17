@@ -2,7 +2,7 @@
   "name": "anilist-recs",
   "sideEffects": false,
   "dependencies": {
-    "esbuild": "~0.25.0",
+    "esbuild": "~0.27.0",
     "select2": "~4.1.0-rc.0",
     "typescript": "~5.9.0"
   },
