@@ -1,6 +1,6 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: ["config:recommended"],
+  extends: ["config:recommended", "group:allNonMajor"],
   automerge: true,
   automergeType: "branch",
   labels: ["Dependency"],
@@ -13,6 +13,7 @@
       automergeType: "branch",
       matchUpdateTypes: ["minor", "patch", "pin", "digest"],
       minimumReleaseAge: "1 week",
+      ignoreTests: true,
     },
     {
       automerge: false,
