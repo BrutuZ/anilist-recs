@@ -27,12 +27,12 @@ body {
 
 #cached,
 #panel-button {
-  font-size: 0.5rem;
-  position: absolute;
-  z-index: 2;
   fill: var(--color-button-bg);
+  font-size: 0.5rem;
   max-width: 5em;
+  position: absolute;
   text-align: center;
+  z-index: 2;
   &.enabled,
   &.active {
     cursor: pointer;
@@ -393,9 +393,12 @@ img {
 .title h3,
 .titles h3 {
   font-weight: 400;
-}
-.licensed {
-  font-style: italic;
+  &.licensed {
+    font-style: italic;
+    &:after {
+      content: ' 🇬🇧';
+    }
+  }
 }
 
 .titles > div,
